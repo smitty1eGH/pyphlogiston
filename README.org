@@ -1,0 +1,9 @@
+* Pyphlogiston
+
+Wrapper for Fossil (https://fossil-scm.org/home/doc/trunk/www/index.wiki) JSON API, since there wasn't any prior art on offer.
+
+This is an incremental effort that is used as an editable checkout for a private project, and as such may appear strangely incomplete.
+
+Emphasis is on:
+- Pytest to build it up nicely, if not completely.
+- Later python features. Backward compatibility not considered.
