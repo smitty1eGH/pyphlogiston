@@ -1017,34 +1017,40 @@ By default, the "ui" command provides full administrative access without having 
 off the "localauth" setting.  Automatic login for the "server" command is available if the --localauth option is present and
 the "localauth" setting is off and the connection is from localhost.  The "ui" command also enables --repolist by default.
 
+** invocation
+
+   https://fossil-scm.org/home/doc/trunk/www/server/debian/service.md
+fossil server --create --localhost --nossl --jsmode bundled SOME_DIRECTORY
+
 ** Options:
-  --baseurl URL       Use URL as the base (useful for reverse proxies)
-  --ckout-alias NAME  Treat URIs of the form /doc/NAME/... as if they were /doc/ckout/...
-  --create            Create a new REPOSITORY if it does not already exist
-  --extroot DIR       Document root for the /ext extension mechanism
-  --files GLOBLIST    Comma-separated list of glob patterns for static files
-  --localauth         enable automatic login for requests from localhost
-  --localhost         listen on 127.0.0.1 only (always true for "ui")
-  --https             Indicates that the input is coming through a reverse proxy that has already translated HTTPS into HTTP.
-  --jsmode MODE       Determine how JavaScript is delivered with pages.
-                      Mode can be one of:
-                         inline       All JavaScript is inserted inline at the end of the HTML file.
-                         separate     Separate HTTP requests are made for each JavaScript file.
-                         bundled      One single separate HTTP fetches all JavaScript concatenated together.
-                      Depending on the needs of any given page, inline and bundled modes might result in a single amalgamated script or several, but both approaches result in fewer HTTP requests than the separate mode.
-  --max-latency N     Do not let any single HTTP request run for more than N seconds (only works on unix)
-  --nocompress        Do not compress HTTP replies
-  --nojail            Drop root privileges but do not enter the chroot jail
-  --nossl             signal that no SSL connections are available (Always set by default for the "ui" command)
-  --notfound URL      Redirect
-  --page PAGE         Start "ui" on PAGE.  ex: --page "timeline?y=ci"
-  -P|--port TCPPORT   listen to request on port TCPPORT
-  --th-trace          trace TH1 execution (for debugging purposes)
-  --repolist          If REPOSITORY is dir, URL "/" lists repos.
-  --scgi              Accept SCGI rather than HTTP
-  --skin LABEL        Use override skin LABEL
-  --mainmenu FILE     Override the mainmenu config setting with the contents of the given file.
-  --usepidkey         Use saved encryption key from parent process.  This is only necessary when using SEE on Windows.
+  --baseurl     URL      Use URL as the base (useful for reverse proxies)
+  --ckout-alias NAME     Treat URIs of the form /doc/NAME/... as if they were /doc/ckout/...
+  --create               Create a new REPOSITORY if it does not already exist
+  --extroot     DIR      Document root for the /ext extension mechanism
+  --files       GLOBLIST Comma-separated list of glob patterns for static files
+  --localauth            enable automatic login for requests from localhost
+  --localhost            listen on 127.0.0.1 only (always true for "ui")
+  --https                Indicates that the input is coming through a reverse proxy that has already translated HTTPS into HTTP.
+  --jsmode      MODE     Determine how JavaScript is delivered with pages.
+                           Mode can be one of:
+                             inline       All JavaScript is inserted inline at the end of the HTML file.
+                             separate     Separate HTTP requests are made for each JavaScript file.
+                             bundled      One single separate HTTP fetches all JavaScript concatenated together.
+                           Depending on the needs of any given page, inline and bundled modes might result in a single amalgamated
+                           script or several, but both approaches result in fewer HTTP requests than the separate mode.
+  --max-latency N        Do not let any single HTTP request run for more than N seconds (only works on unix)
+  --nocompress           Do not compress HTTP replies
+  --nojail               Drop root privileges but do not enter the chroot jail
+  --nossl                signal that no SSL connections are available (Always set by default for the "ui" command)
+  --notfound    URL      Redirect
+  --page        PAGE     Start "ui" on PAGE.  ex: --page "timeline?y=ci"
+  -P|--port     TCPPORT  listen to request on port TCPPORT
+  --th-trace             trace TH1 execution (for debugging purposes)
+  --repolist             If REPOSITORY is dir, URL "/" lists repos.
+  --scgi                 Accept SCGI rather than HTTP
+  --skin        LABEL    Use override skin LABEL
+  --mainmenu    FILE     Override the mainmenu config setting with the contents of the given file.
+  --usepidkey            Use saved encryption key from parent process.  This is only necessary when using SEE on Windows.
 
 See also: cgi, http, winsrv
 * SKIP
@@ -2756,4 +2762,5 @@ If OUTPUTFILE is an empty string or "/dev/null" then no ZIP archive is actually 
   -l|--list               Show archive content on stdout
   --name DIRECTORYNAME    The name of the top-level directory in the archive
   -R REPOSITORY           Specify a Fossil repository
+  
   
