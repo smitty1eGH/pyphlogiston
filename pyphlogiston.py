@@ -7,4 +7,4 @@ import click
 def main(help='Main'):
     """Main interface
     """
-    pass
+    click.echo('hello world')

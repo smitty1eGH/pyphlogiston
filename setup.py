@@ -6,8 +6,5 @@ setup(
     py_modules=["pyphlogiston"],
     packages=find_packages(),
     install_requires=["Click"],
-    entry_points="""
-        [console_scripts]
-        pyphlogiston=pyphlogiston:main
-    """,
+    entry_points={'console_scripts':['pyphlogiston=pyphlogiston:main',],}
 )
