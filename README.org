@@ -7,3 +7,55 @@ This is an incremental effort that is used as an editable checkout for a private
 Emphasis is on:
 - Pytest to build it up nicely, if not completely.
 - Later python features. Backward compatibility not considered.
+
+* Steps:
+** 0. Installation
+*** Toolchain level
+   Not going to start here. The code for Fossil has been compiled, with attention to JSON API 
+*** Service installation 
+#+name: setup_fossil_service
+#+begin_src sh
+  FOSSIL=~/src/fossil-snapshot-20210429/
+  TCPPORT=9000
+  USER_SERVICE=~/.config/systemd/user
+  USER_MUSEUM=~/.config/fossil/museum
+  mkdir -p ${USER_MUSEUM}
+  mkdir -p ${USER_SERVICE}
+  FOSSIL_ARGS="--create --localauth --localhost --jsmode inline --nojail --nossl --port ${TCPPORT} ${USER_MUSEUM}"
+  cat <<EOF>${USER_SERVICE}/fossil.socket
+  [Unit]
+  Description=Fossil user server
+  After=network.target
+
+  [Service]
+  WorkingDirectory=${USER_MUSEUM}
+  ExecStart=${FOSSIL}fossil server --port ${FOSSIL_ARGS}
+  Restart=always
+  RestartSec=3
+
+  [Socket]
+  ListenStream=127.0.0.1:${TCPPORT}
+
+
+  [Install]
+  WantedBy=sockets.target
+  WantedBy=multi-user.target 
+  EOF
+  chmod +x ${USER_SERVICE}/fossil.socket
+  systemctl --user daemon-reload
+  systemctl --user enable fossil.socket
+  systemctl --user start fossil.socket
+  systemctl --user status -l fossil.socket 
+#+end_src
+
+** 1. Startup
+   How we make sure the Fossil service is running
+** 2. Create
+   Add records
+** 3. Review
+*** 3.0 Single entry history
+*** 3.1 Category history
+** 4. Update
+*** 4.0 Change a record
+*** 4.1 Merge records
+*** 4.2 Split record
