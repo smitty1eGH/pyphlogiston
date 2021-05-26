@@ -1,3 +1,110 @@
+* IMPLEMENTED
+** fossil server ?OPTIONS? ?REPOSITORY?
+   or: fossil ui ?OPTIONS? ?REPOSITORY?
+   
+Open a socket and begin listening and responding to HTTP requests on TCP port 8080, or on any other TCP port defined by the
+-P or --port option.  The optional argument is the name of the repository. The repository argument may be omitted if the
+working directory is within an open checkout.
+
+The "ui" command automatically starts a web browser after initializing the web server.  The "ui" command also binds to
+127.0.0.1 and so will only process HTTP traffic from the local machine.
+
+The REPOSITORY can be a directory (aka folder) that contains one or more repositories with names ending in ".fossil".
+In this case, a prefix of the URL pathname is used to search the directory for an appropriate repository.  To thwart mischief,
+the pathname in the URL must contain only alphanumerics, "_", "/", "-", and ".", and no "-" may occur after "/", and
+every "." must be surrounded on both sides by alphanumerics.  Any pathname that does not satisfy these constraints results
+in a 404 error.  Files in REPOSITORY that match the comma-separated list of glob patterns given by --files and that have
+known suffixes such as ".txt" or ".html" or ".jpeg" and do not match the pattern "*.fossil*" will be served as static content.
+With the "ui" command, the REPOSITORY can only be a directory if the --notfound option is also present.
+
+For the special case REPOSITORY name of "/", the list global configuration database is consulted for a list of all known
+repositories.  The --repolist option is implied by this special case.  See also the "fossil all ui" command.
+
+By default, the "ui" command provides full administrative access without having to log in.  This can be disabled by turning
+off the "localauth" setting.  Automatic login for the "server" command is available if the --localauth option is present and
+the "localauth" setting is off and the connection is from localhost.  The "ui" command also enables --repolist by default.
+
+*** invocation
+
+   https://fossil-scm.org/home/doc/trunk/www/server/debian/service.md
+fossil server --create --localhost --nossl --jsmode bundled SOME_DIRECTORY
+
+*** Options:
+  --baseurl     URL      Use URL as the base (useful for reverse proxies)
+  --ckout-alias NAME     Treat URIs of the form /doc/NAME/... as if they were /doc/ckout/...
+  --create               Create a new REPOSITORY if it does not already exist
+  --extroot     DIR      Document root for the /ext extension mechanism
+  --files       GLOBLIST Comma-separated list of glob patterns for static files
+  --localauth            enable automatic login for requests from localhost
+  --localhost            listen on 127.0.0.1 only (always true for "ui")
+  --https                Indicates that the input is coming through a reverse proxy that has already translated HTTPS into HTTP.
+  --jsmode      MODE     Determine how JavaScript is delivered with pages.
+                           Mode can be one of:
+                             inline       All JavaScript is inserted inline at the end of the HTML file.
+                             separate     Separate HTTP requests are made for each JavaScript file.
+                             bundled      One single separate HTTP fetches all JavaScript concatenated together.
+                           Depending on the needs of any given page, inline and bundled modes might result in a single amalgamated
+                           script or several, but both approaches result in fewer HTTP requests than the separate mode.
+  --max-latency N        Do not let any single HTTP request run for more than N seconds (only works on unix)
+  --nocompress           Do not compress HTTP replies
+  --nojail               Drop root privileges but do not enter the chroot jail
+  --nossl                signal that no SSL connections are available (Always set by default for the "ui" command)
+  --notfound    URL      Redirect
+  --page        PAGE     Start "ui" on PAGE.  ex: --page "timeline?y=ci"
+  -P|--port     TCPPORT  listen to request on port TCPPORT
+  --th-trace             trace TH1 execution (for debugging purposes)
+  --repolist             If REPOSITORY is dir, URL "/" lists repos.
+  --scgi                 Accept SCGI rather than HTTP
+  --skin        LABEL    Use override skin LABEL
+  --mainmenu    FILE     Override the mainmenu config setting with the contents of the given file.
+  --usepidkey            Use saved encryption key from parent process.  This is only necessary when using SEE on Windows.
+
+See also: cgi, http, winsrv
+* fossil version ?-v|--verbose?
+
+Print the source code version number for the fossil executable. If the verbose option is specified, additional details will
+be output about what optional features this binary was compiled with
+* fossil add ?OPTIONS? FILE1 ?FILE2 ...?
+
+Make arrangements to add one or more files or directories to the current checkout at the next commit.
+
+When adding files or directories recursively, filenames that begin with "." are excluded by default.
+To include such files, add the "--dotfiles" option to the command-line.
+
+The --ignore and --clean options are comma-separated lists of glob patterns for files to be excluded.
+Example:  '*.o,*.obj,*.exe'  If the --ignore option does not appear on the command line then the "ignore-glob" setting is used.
+If the --clean option does not appear on the command line then the "clean-glob" setting is used.
+
+If files are attempted to be added explicitly on the command line which match "ignore-glob", a confirmation is asked first.
+This can be prevented using the -f|--force option.
+
+The --case-sensitive option determines whether or not filenames should be treated case sensitive or not. If the option is not
+given, the default depends on the global setting, or the operating system default, if not set.
+
+** Options:
+
+   --case-sensitive BOOL   Override the case-sensitive setting
+   --dotfiles              Include files beginning with a dot (".")
+   -f|--force              Add files without prompting
+   --ignore CSG            Ignore unmanaged files matching patterns from
+                           the Comma Separated Glob (CSG) pattern list
+   --clean CSG             Also ignore files matching patterns from
+                           the Comma Separated Glob (CSG) list
+   --reset                 Reset the ADDED state of a checkout, such
+                           that all newly-added (but not yet committed)
+                           files are no longer added. No flags other
+                           than --verbose and --dry-run may be used
+                           with --reset.
+   --allow-reserved        Permit filenames which are reserved on
+                           Windows platforms. Such files cannot be
+                           checked out on Windows, so use with care.
+
+The following options are only valid with --reset:
+   -v|--verbose            Output information about each --reset file
+   -n|--dry-run            Display instead of run actions
+
+See also: addremove, rm
+
 * fossil 3-way-merge BASELINE V1 V2 MERGED
 
 Inputs are files BASELINE, V1, and V2.  The file MERGED is generated as output.
@@ -90,72 +197,6 @@ The --hash option detects edited files by computing each file's artifact hash ra
 DATETIME may be "now" or "YYYY-MM-DDTHH:MM:SS.SSS". If in year-month-day form, it may be truncated, the "T" may be replaced by a space, and it may also name a timezone offset from UTC as "-HH:MM" (westward) or "+HH:MM" (eastward). Either no timezone suffix or "Z" means UTC.
 
 See also: branch, changes, update, extras, sync
-* fossil push ?URL? ?options?
-
-Push all sharable changes from the local repository to a remote repository.  Sharable changes include public check-ins, edits
-to wiki pages, tickets, and tech-notes, as well as forum content.  Use --private to also push private branches.
-Use the "configuration push" command to push website configuration details.
-
-If URL is not specified, then the URL from the most recent clone, push, pull, remote, or sync command is used.
-See "fossil help clone" for details on the URL formats.
-
-** Options:
-
-  -B|--httpauth USER:PASS    Credentials for the simple HTTP auth protocol,
-                             if required by the remote website
-  --ipv4                     Use only IPv4, not IPv6
-  --once                     Do not remember URL for subsequent syncs
-  --proxy PROXY              Use the specified HTTP proxy
-  --private                  Push private branches too
-  -R|--repository REPO       Local repository to push from
-  --ssl-identity FILE        Local SSL credentials, if requested by remote
-  --ssh-command SSH          Use SSH as the "ssh" command
-  -v|--verbose               Additional (debugging) output
-  --verily                   Exchange extra information with the remote
-                             to ensure no content is overlooked
-
-See also: clone, config, pull, remote, sync
-* fossil add ?OPTIONS? FILE1 ?FILE2 ...?
-
-Make arrangements to add one or more files or directories to the current checkout at the next commit.
-
-When adding files or directories recursively, filenames that begin with "." are excluded by default.
-To include such files, add the "--dotfiles" option to the command-line.
-
-The --ignore and --clean options are comma-separated lists of glob patterns for files to be excluded.
-Example:  '*.o,*.obj,*.exe'  If the --ignore option does not appear on the command line then the "ignore-glob" setting is used.
-If the --clean option does not appear on the command line then the "clean-glob" setting is used.
-
-If files are attempted to be added explicitly on the command line which match "ignore-glob", a confirmation is asked first.
-This can be prevented using the -f|--force option.
-
-The --case-sensitive option determines whether or not filenames should be treated case sensitive or not. If the option is not
-given, the default depends on the global setting, or the operating system default, if not set.
-
-** Options:
-
-   --case-sensitive BOOL   Override the case-sensitive setting
-   --dotfiles              Include files beginning with a dot (".")
-   -f|--force              Add files without prompting
-   --ignore CSG            Ignore unmanaged files matching patterns from
-                           the Comma Separated Glob (CSG) pattern list
-   --clean CSG             Also ignore files matching patterns from
-                           the Comma Separated Glob (CSG) list
-   --reset                 Reset the ADDED state of a checkout, such
-                           that all newly-added (but not yet committed)
-                           files are no longer added. No flags other
-                           than --verbose and --dry-run may be used
-                           with --reset.
-   --allow-reserved        Permit filenames which are reserved on
-                           Windows platforms. Such files cannot be
-                           checked out on Windows, so use with care.
-
-The following options are only valid with --reset:
-   -v|--verbose            Output information about each --reset file
-   -n|--dry-run            Display instead of run actions
-
-See also: addremove, rm
-
 * fossil clean ?OPTIONS? ?PATH ...?
 
 Delete all "extra" files in the source tree.  "Extra" files are files that are not officially part of the checkout.
@@ -703,7 +744,7 @@ One of PAGENAME, DATETIME or TECHNOTE-ID must be specified.
 
 DATETIME may be "now" or "YYYY-MM-DDTHH:MM:SS.SSS". If in year-month-day form, it may be truncated, the "T" may be replaced by a space, and it may also name a timezone offset from UTC as "-HH:MM" (westward) or "+HH:MM" (eastward). Either no timezone suffix or "Z" means UTC.
 * fossil revert ?OPTIONS? ?FILE ...?
-
+  
 Revert to the current repository version of FILE, or to the baseline VERSION specified with -r flag.
 
 If FILE was part of a rename operation, both the original file and the renamed file are reverted.
@@ -992,67 +1033,296 @@ Pathnames are displayed according to the "relative-paths" setting, unless overri
    --rel-paths             Display pathnames relative to the current working directory
 
 See also: changes, clean, status
-* fossil server ?OPTIONS? ?REPOSITORY?
-   or: fossil ui ?OPTIONS? ?REPOSITORY?
-   
-Open a socket and begin listening and responding to HTTP requests on TCP port 8080, or on any other TCP port defined by the
--P or --port option.  The optional argument is the name of the repository. The repository argument may be omitted if the
-working directory is within an open checkout.
+* fossil finfo ?OPTIONS? FILENAME
 
-The "ui" command automatically starts a web browser after initializing the web server.  The "ui" command also binds to
-127.0.0.1 and so will only process HTTP traffic from the local machine.
+Print the complete change history for a single file going backwards in time.  The default mode is -l.
 
-The REPOSITORY can be a directory (aka folder) that contains one or more repositories with names ending in ".fossil".
-In this case, a prefix of the URL pathname is used to search the directory for an appropriate repository.  To thwart mischief,
-the pathname in the URL must contain only alphanumerics, "_", "/", "-", and ".", and no "-" may occur after "/", and
-every "." must be surrounded on both sides by alphanumerics.  Any pathname that does not satisfy these constraints results
-in a 404 error.  Files in REPOSITORY that match the comma-separated list of glob patterns given by --files and that have
-known suffixes such as ".txt" or ".html" or ".jpeg" and do not match the pattern "*.fossil*" will be served as static content.
-With the "ui" command, the REPOSITORY can only be a directory if the --notfound option is also present.
+For the -l|--log mode: If "-b|--brief" is specified one line per revision is printed, otherwise the full comment is printed.
+The "-n|--limit N" and "--offset P" options limits the output to the first N changes after skipping P changes.
 
-For the special case REPOSITORY name of "/", the list global configuration database is consulted for a list of all known
-repositories.  The --repolist option is implied by this special case.  See also the "fossil all ui" command.
+The -i mode will print the artifact ID of FILENAME given the REVISION provided by the -r flag (which is required).
 
-By default, the "ui" command provides full administrative access without having to log in.  This can be disabled by turning
-off the "localauth" setting.  Automatic login for the "server" command is available if the --localauth option is present and
-the "localauth" setting is off and the connection is from localhost.  The "ui" command also enables --repolist by default.
+In the -s mode prints the status as <status> <revision>.  This is a quick status and does not check for up-to-date-ness of the file.
 
-** invocation
+In the -p mode, there's an optional flag "-r|--revision REVISION". The specified version (or the latest checked out version)
+is printed to stdout.  The -p mode is another form of the "cat" command.
 
-   https://fossil-scm.org/home/doc/trunk/www/server/debian/service.md
-fossil server --create --localhost --nossl --jsmode bundled SOME_DIRECTORY
+*** Options:
+  -b|--brief           Display a brief (one line / revision) summary
+  --case-sensitive B   Enable or disable case-sensitive filenames.  B is a boolean: "yes", "no", "true", "false", etc.
+  -i|--id              Print the artifact ID (requires -r)
+  -l|--log             Select log mode (the default)
+  -n|--limit N         Display the first N changes (default unlimited). N less than 0 means no limit.
+  --offset P           Skip P changes
+  -p|--print           Select print mode
+  -r|--revision R      Print the given revision (or ckout, if none is given) to stdout (only in print mode)
+  -s|--status          Select status mode (print a status indicator for FILE)
+  -W|--width N         Width of lines (default is to auto-detect). Must be more than 22 or else 0 to indicate no limit.
+
+See also: artifact, cat, descendants, info, leaves
+* fossil settings ?SETTING? ?VALUE? ?OPTIONS?
+   or: fossil unset SETTING ?OPTIONS?
+
+The "settings" command with no arguments lists all settings and their values.  With just a SETTING name it shows the
+current value of that setting. With a VALUE argument it changes the property for the current repository.
+
+Settings marked as versionable are overridden by the contents of the file named .fossil-settings/PROPERTY in the check-out
+root, if that file exists.
+
+The "unset" command clears a setting.
+
+Settings can have both a "local" repository-only value and "global" value that applies to all repositories.  The local
+values are stored in the "config" table of the repository and the global values are stored in the configuration database.
+If both a local and a global value exists for a setting, the local value takes precedence.  This command normally operates
+on the local settings.  Use the --global option to change global settings.
 
 ** Options:
-  --baseurl     URL      Use URL as the base (useful for reverse proxies)
-  --ckout-alias NAME     Treat URIs of the form /doc/NAME/... as if they were /doc/ckout/...
-  --create               Create a new REPOSITORY if it does not already exist
-  --extroot     DIR      Document root for the /ext extension mechanism
-  --files       GLOBLIST Comma-separated list of glob patterns for static files
-  --localauth            enable automatic login for requests from localhost
-  --localhost            listen on 127.0.0.1 only (always true for "ui")
-  --https                Indicates that the input is coming through a reverse proxy that has already translated HTTPS into HTTP.
-  --jsmode      MODE     Determine how JavaScript is delivered with pages.
-                           Mode can be one of:
-                             inline       All JavaScript is inserted inline at the end of the HTML file.
-                             separate     Separate HTTP requests are made for each JavaScript file.
-                             bundled      One single separate HTTP fetches all JavaScript concatenated together.
-                           Depending on the needs of any given page, inline and bundled modes might result in a single amalgamated
-                           script or several, but both approaches result in fewer HTTP requests than the separate mode.
-  --max-latency N        Do not let any single HTTP request run for more than N seconds (only works on unix)
-  --nocompress           Do not compress HTTP replies
-  --nojail               Drop root privileges but do not enter the chroot jail
-  --nossl                signal that no SSL connections are available (Always set by default for the "ui" command)
-  --notfound    URL      Redirect
-  --page        PAGE     Start "ui" on PAGE.  ex: --page "timeline?y=ci"
-  -P|--port     TCPPORT  listen to request on port TCPPORT
-  --th-trace             trace TH1 execution (for debugging purposes)
-  --repolist             If REPOSITORY is dir, URL "/" lists repos.
-  --scgi                 Accept SCGI rather than HTTP
-  --skin        LABEL    Use override skin LABEL
-  --mainmenu    FILE     Override the mainmenu config setting with the contents of the given file.
-  --usepidkey            Use saved encryption key from parent process.  This is only necessary when using SEE on Windows.
+  --global   set or unset the given property globally instead of setting or unsetting it for the open repository only.
+  --exact    only consider exact name matches.
 
-See also: cgi, http, winsrv
+See also: configuration
+* fossil open REPOSITORY ?VERSION? ?OPTIONS?
+
+Open a new connection to the repository name REPOSITORY.  A checkout for the repository is created with its root at the current
+working directory, or in DIR if the "--workdir DIR" is used.  If VERSION is specified then that version is checked out.
+Otherwise the most recent check-in on the main branch (usually "trunk") is used.
+
+REPOSITORY can be the filename for a repository that already exists on the local machine or it can be a URI for a remote
+repository.  If REPOSITORY is a URI in one of the formats recognized by the clone command, then remote repo is first cloned,
+then the clone is opened. The clone will be stored in the current directory, or in DIR if the "--repodir DIR" option is used.
+The name of the clone will be taken from the last term of the URI. For "http:" and "https:" URIs, you can append an extra term
+to the end of the URI to get any repository name you like. For example:
+
+    fossil open https://fossil-scm.org/home/new-name
+
+The base URI for cloning is "https://fossil-scm.org/home".  The extra "new-name" term means that the cloned repository will be
+called "new-name.fossil".
+
+** Options:
+  --empty           Initialize checkout as being empty, but still connected with the local repository. If you commit this checkout, it will become a new "initial" commit in the repository.
+  -f|--force        Continue with the open even if the working directory is not empty.
+  --force-missing   Force opening a repository with missing content
+  --keep            Only modify the manifest and manifest.uuid files
+  --nested          Allow opening a repository inside an opened checkout
+  --repodir DIR     If REPOSITORY is a URI that will be cloned, store the clone in DIR rather than in "."
+  --setmtime        Set timestamps of all files to match their SCM-side times (the timestamp of the last checkin which modified them).
+  --workdir DIR     Use DIR as the working directory instead of ".". The DIR directory is created if it does not exist.
+
+See also: close, clone
+* fossil cat FILENAME ... ?OPTIONS?
+
+Print on standard output the content of one or more files as they exist in the repository.  The version currently checked
+out is shown by default. Other versions may be specified using the -r option.
+
+** Options:
+   -R|--repository REPO       Extract artifacts from repository REPO
+   -r VERSION                 The specific check-in containing the file
+
+See also: finfo
+* fossil fts-config ?SUBCOMMAND? ?ARGUMENT?
+
+The "fossil fts-config" command configures the full-text search capabilities of the repository.  Subcommands:
+
+    reindex            Rebuild the search index.  This is a no-op if index search is disabled
+    index (on|off)     Turn the search index on or off
+    enable cdtwe       Enable various kinds of search. c=Check-ins, d=Documents, t=Tickets, w=Wiki, e=Tech Notes.
+    disable cdtwe      Disable various kinds of search
+    stemmer (on|off)   Turn the Porter stemmer on or off for indexed search.  (Unindexed search is never stemmed.)
+
+The current search settings are displayed after any changes are applied. Run this command with no arguments to simply see the settings.
+* fossil pikchr [options] ?INFILE? ?OUTFILE?
+
+Accepts a pikchr script as input and outputs the rendered script as an SVG graphic. The INFILE and OUTFILE options default to
+stdin resp. stdout, and the names "-" can be used as aliases for those streams.
+
+** Options:
+
+   -div         On success, add a DIV wrapper around the resulting SVG output which limits its max-width to its computed
+                maximum ideal size.
+   -div-indent  Like -div but indent the div.
+   -div-center  Like -div but center the div.
+   -div-left    Like -div but float the div left.
+   -div-right   Like -div but float the div right.
+   -div-toggle  Set the 'toggle' CSS class on the div (used by the JavaScript-side post-processor).
+   -div-source  Set the 'source' CSS class on the div, which tells CSS to hide the SVG and reveal the source by default.
+   -src         Store the input pikchr's source code in the output as a separate element adjacent to the SVG one. Implied by -div-source.
+   -th          Process the input using TH1 before passing it to pikchr.
+   -th-novar    Disable $var and $<var> TH1 processing. Use this if the pikchr script uses '$' for its own purposes and that causes issues. This only affects parsing of '$' outside of TH1 script blocks. Code in such blocks is unaffected.
+   -th-nosvg    When using -th, output the post-TH1'd script instead of the pikchr-rendered output.
+   -th-trace    Trace TH1 execution (for debugging purposes).
+
+The -div-indent/center/left/right flags may not be combined.
+TH1-related Notes and Caveats:
+If the -th flag is used, this command must open a fossil database for certain functionality to work (via a checkout or the
+-R REPO flag). If opening a db fails, execution will continue but any TH1 commands which require a db will trigger a fatal error.
+
+In Fossil skins, TH1 variables in the form $varName are expanded as-is and those in the form $<varName> are htmlized in the
+resulting output. This processor disables the htmlizing step, so $x and $<x> are equivalent unless the TH1-processed pikchr
+script invokes the TH1 command [enable_htmlify 1] to enable it. Normally that option will interfere with pikchr output, however,
+e.g. by HTML-encoding double-quotes.
+
+Many of the fossil-installed TH1 functions simply do not make any sense for pikchr scripts.
+* fossil diff|gdiff ?OPTIONS? ?FILE1? ?FILE2 ...?
+
+Show the difference between the current version of each of the FILEs specified (as they exist on disk) and that same
+file as it was checked out.  Or if the FILE arguments are omitted, show the unsaved changes currently in the working check-out.
+
+If the "--from VERSION" or "-r VERSION" option is used it specifies the source check-in for the diff operation.  If not
+specified, the source check-in is the base check-in for the current check-out.
+
+If the "--to VERSION" option appears, it specifies the check-in from which the second version of the file or files is taken.
+If there is no "--to" option then the (possibly edited) files in the current check-out are used.
+
+The "--checkin VERSION" option shows the changes made by check-in VERSION relative to its primary parent.
+
+The "-i" command-line option forces the use of the internal diff logic rather than any external diff program that might be
+configured using the "setting" command.  If no external diff program is configured, then the "-i" option is a no-op.
+The "-i" option converts "gdiff" into "diff".
+
+The "-v" or "--verbose" option causes the complete text of added or deleted files to be displayed. -N and --new-file are
+aliases for verbose mode.
+
+The "--diff-binary" option enables or disables the inclusion of binary files when using an external diff program.
+
+The "--binary" option causes files matching the glob PATTERN to be treated as binary when considering if they should be used
+with external diff program. This option overrides the "binary-glob" setting.
+
+** Options:
+  --binary PATTERN            Treat files that match the glob PATTERN as binary
+  --branch BRANCH             Show diff of all changes on BRANCH
+  --brief                     Show filenames only
+  --checkin VERSION           Show diff of all changes in VERSION
+  --command PROG              External diff program. Overrides "diff-command"
+  -c|--context N              Use N lines of context
+  --diff-binary BOOL          Include binary files with external commands
+  --exec-abs-paths            Force absolute path names on external commands
+  --exec-rel-paths            Force relative path names on external commands
+  -r|--from VERSION           Select VERSION as source for the diff
+  -i|--internal               Use internal diff logic
+  --numstat                   Show only the number of lines delete and added
+  -y|--side-by-side           Side-by-side diff
+  --strip-trailing-cr         Strip trailing CR
+  --tclsh PATH                Tcl/Tk used for --tk (default: "tclsh")
+  --tk                        Launch a Tcl/Tk GUI for display
+  --to VERSION                Select VERSION as target for the diff
+  --undo                      Diff against the "undo" buffer
+  --unified                   Unified diff
+  -v|--verbose                Output complete text of added or deleted files
+  -N|--new-file               Alias for --verbose
+  -w|--ignore-all-space       Ignore white space when comparing lines
+  -W|--width N                Width of lines in side-by-side diff
+  -Z|--ignore-trailing-space  Ignore changes to end-of-line whitespace
+* fossil annotate|blame|praise ?OPTIONS? FILENAME
+
+Output the text of a file with markings to show when each line of the file was last modified.  The version currently checked
+out is shown by default. Other versions may be specified using the -r option.  The "annotate" command shows line numbers and
+omits the username.  The "blame" and "praise" commands show the user who made each check-in.
+
+Reverse Annotations:  Normally, these commands look at versions of FILENAME moving backwards in time back toward the root
+check-in, and thus the output shows the most recent change to each line.  However, if the -o|--origin option is used to specify
+some future check-in (example: "-o trunk") then these commands show changes moving towards that alternative origin.  Thus
+using "-o trunk" on an historical version of the file shows the first time each line in the file was changed or removed by
+any subsequent check-in.
+
+** Options:
+  --filevers                  Show file version numbers rather than check-in versions
+  -r|--revision VERSION       The specific check-in containing the file
+  -l|--log                    List all versions analyzed
+  -n|--limit LIMIT            LIMIT can be one of:
+                                N      Up to N versions
+                                Xs     As much as possible in X seconds
+                                none   No limit
+  -o|--origin VERSION         The origin check-in. By default this is the root of the repository. Set to "trunk" or similar for a reverse annotation.
+  -w|--ignore-all-space       Ignore white space when comparing lines
+  -Z|--ignore-trailing-space  Ignore whitespace at line end
+
+See also: info, finfo, timeline
+* fossil changes|status ?OPTIONS? ?PATHS ...?
+
+Report the change status of files in the current checkout.  If one or more PATHS are specified, only changes among the named files and directories are reported.  Directories are searched recursively.
+
+The status command is similar to the changes command, except it lacks several of the options supported by changes and it has its own header and footer information.  The header information is a subset of that shown by the info command, and the footer shows if there are any forks. Change type classification is always enabled for the status command.
+
+Each line of output is the name of a changed file, with paths shown according to the "relative-paths" setting, unless overridden by the --abs-paths or --rel-paths options.
+
+By default, all changed files are selected for display.  This behavior can be overridden by using one or more filter options (listed below), in which case only files with the specified change type(s) are shown. As a special case, the --no-merge option does not inhibit this default. This default shows exactly the set of changes that would be checked in by the commit command.
+
+If no filter options are used, or if the --merge option is used, the artifact hash of each merge contributor check-in version is displayed at the end of the report.  The --no-merge option is useful to display the default set of changed files without the merge contributors.
+
+If change type classification is enabled, each output line starts with a code describing the file's change type, e.g. EDITED or RENAMED.  It is enabled by default unless exactly one change type is selected.  For the purposes of determining the default, --changed counts as selecting one change type.  The default can be overridden by the --classify or --no-classify options.
+
+--edited and --updated produce disjoint sets.  --updated shows a file only when it is identical to that of its merge contributor, and the change type classification is UPDATED_BY_MERGE or UPDATED_BY_INTEGRATE. If the file had to be merged with any other changes, it is considered to be merged or conflicted and therefore will be shown by --edited, not --updated, with types EDITED or CONFLICT.  The --changed option can be used to display the union of --edited and --updated.
+
+--differ is so named because it lists all the differences between the checked-out version and the checkout directory.  In addition to the default changes (excluding --merge), it lists extra files which (if ignore-glob is set correctly) may be worth adding.  Prior to doing a commit, it is good practice to check --differ to see not only which changes would be committed but also if any files should be added.
+
+If both --merge and --no-merge are used, --no-merge has priority.  The same is true of --classify and --no-classify.
+
+The "fossil changes --extra" command is equivalent to "fossil extras".
+
+** General options:
+   --abs-paths       Display absolute pathnames.
+   --rel-paths       Display pathnames relative to the current working directory.
+   --hash            Verify file status using hashing rather than relying on file mtimes.
+   --case-sensitive BOOL  Override case-sensitive setting.
+   --dotfiles        Include unmanaged files beginning with a dot.
+   --ignore <CSG>    Ignore unmanaged files matching CSG glob patterns.
+
+** Options specific to the changes command:
+   --header          Identify the repository if report is non-empty.
+   -v|--verbose      Say "(none)" if the change report is empty.
+   --classify        Start each line with the file's change type.
+   --no-classify     Do not print file change types.
+
+** Filter options:
+   --edited          Display edited, merged, and conflicted files.
+   --updated         Display files updated by merge/integrate.
+   --changed         Combination of the above two options.
+   --missing         Display missing files.
+   --added           Display added files.
+   --deleted         Display deleted files.
+   --renamed         Display renamed files.
+   --conflict        Display files having merge conflicts.
+   --meta            Display files with metadata changes.
+   --unchanged       Display unchanged files.
+   --all             Display all managed files, i.e. all of the above.
+   --extra           Display unmanaged files.
+   --differ          Display modified and extra files.
+   --merge           Display merge contributors.
+   --no-merge        Do not display merge contributors.
+
+See also: extras, ls
+* fossil grep [OPTIONS] PATTERN FILENAME ...
+
+Attempt to match the given POSIX extended regular expression PATTERN over all historic versions of FILENAME.  The search begins with the most recent version of the file and moves backwards in time.  Multiple FILENAMEs can be specified, in which case all named files are searched in reverse chronological order.
+
+For details of the supported regular expression dialect, see
+https://fossil-scm.org/fossil/doc/trunk/www/grep.md
+
+** Options:
+
+    -c|--count                 Suppress normal output; instead print a count of the number of matching files
+    -i|--ignore-case           Ignore case
+    -l|--files-with-matches    List only hash for each match
+    --once                     Stop searching after the first match
+    -s|--no-messages           Suppress error messages about nonexistent or unreadable files
+    -v|--invert-match          Invert the sense of matching.  Show only files that have no matches. Implies -l
+    --verbose                  Show each file as it is analyzed
+* fossil checkout ?VERSION | --latest? ?OPTIONS?
+   or: fossil co ?VERSION | --latest? ?OPTIONS?
+
+NOTE: Most people use "fossil update" instead of "fossil checkout" for day-to-day operations.  If you are new to Fossil and trying to learn your way around, it is recommended that you become familiar with the "fossil update" command first.
+
+This command changes the current check-out to the version specified as an argument.  The command aborts if there are edited files in the current checkout unless the --force option is used.  The --keep option leaves files on disk unchanged, except the manifest and manifest.uuid files.
+
+The --latest flag can be used in place of VERSION to checkout the latest version in the repository.
+
+** Options:
+   --force           Ignore edited files in the current checkout
+   --keep            Only update the manifest and manifest.uuid files
+   --force-missing   Force checkout even if content is missing
+   --setmtime        Set timestamps of all files to match their SCM-side times (the timestamp of the last checkin which modified them)
+
+See also: update
 * SKIP
 ** fossil help [OPTIONS] [TOPIC]
 
@@ -1847,7 +2117,7 @@ some future check-in (example: "-o trunk") then these commands show changes movi
 Thus using "-o trunk" on an historical version of the file shows the first time each line in the file was changed or removed
 by any subsequent check-in.
 
-** Options:
+*** Options:
   --filevers                  Show file version numbers rather than check-in versions
   -r|--revision VERSION       The specific check-in containing the file
   -l|--log                    List all versions analyzed
@@ -1872,7 +2142,7 @@ The "unset" command clears a setting.
 
 Settings can have both a "local" repository-only value and "global" value that applies to all repositories.  The local values are stored in the "config" table of the repository and the global values are stored in the configuration database.  If both a local and a global value exists for a setting, the local value takes precedence.  This command normally operates on the local settings.  Use the --global option to change global settings.
 
-** Options:
+*** Options:
   --global   set or unset the given property globally instead of setting or unsetting it for the open repository only.
 
   --exact    only consider exact name matches.
@@ -1939,7 +2209,7 @@ Subcommands:
 
   --mtime TIMESTAMP       Use TIMESTAMP instead of "now" for the "add", "edit", "remove", and "touch" subcommands.
   -R|--repository REPO    Use FILE as the repository
-* fossil bundle SUBCOMMAND ARGS...
+** fossil bundle SUBCOMMAND ARGS...
 
   fossil bundle append BUNDLE FILE...
 
@@ -1975,81 +2245,53 @@ Subcommands:
      Remove from the repository all files that are used exclusively by check-ins in BUNDLE.  This has the effect of undoing a "fossil bundle import".
 
 See also: publish
-* fossil finfo ?OPTIONS? FILENAME
-
-Print the complete change history for a single file going backwards in time.  The default mode is -l.
-
-For the -l|--log mode: If "-b|--brief" is specified one line per revision is printed, otherwise the full comment is printed.  The "-n|--limit N" and "--offset P" options limits the output to the first N changes after skipping P changes.
-
-The -i mode will print the artifact ID of FILENAME given the REVISION provided by the -r flag (which is required).
-
-In the -s mode prints the status as <status> <revision>.  This is a quick status and does not check for up-to-date-ness of the file.
-
-In the -p mode, there's an optional flag "-r|--revision REVISION". The specified version (or the latest checked out version) is printed to stdout.  The -p mode is another form of the "cat" command.
-
-** Options:
-  -b|--brief           Display a brief (one line / revision) summary
-  --case-sensitive B   Enable or disable case-sensitive filenames.  B is a boolean: "yes", "no", "true", "false", etc.
-  -i|--id              Print the artifact ID (requires -r)
-  -l|--log             Select log mode (the default)
-  -n|--limit N         Display the first N changes (default unlimited). N less than 0 means no limit.
-  --offset P           Skip P changes
-  -p|--print           Select print mode
-  -r|--revision R      Print the given revision (or ckout, if none is given) to stdout (only in print mode)
-  -s|--status          Select status mode (print a status indicator for FILE)
-  -W|--width N         Width of lines (default is to auto-detect). Must be more than 22 or else 0 to indicate no limit.
-
-See also: artifact, cat, descendants, info, leaves
-* fossil new ?OPTIONS? FILENAME
+** fossil new ?OPTIONS? FILENAME
    or: fossil init ?OPTIONS? FILENAME
 
-Create a repository for a new project in the file named FILENAME. This command is distinct from "clone".  The "clone" command makes a copy of an existing project.  This command starts a new project.
+Create a repository for a new project in the file named FILENAME. This command is distinct from "clone".  The "clone"
+command makes a copy of an existing project.  This command starts a new project.
 
-By default, your current login name is used to create the default admin user. This can be overridden using the -A|--admin-user parameter.
+By default, your current login name is used to create the default admin user. This can be overridden using the
+-A|--admin-user parameter.
 
-By default, all settings will be initialized to their default values. This can be overridden using the --template parameter to specify a repository file from which to copy the initial settings.  When a template repository is used, almost all of the settings accessible from the setup page, either directly or indirectly, will be copied.  Normal users and their associated permissions will not be copied; however, the system default users "anonymous", "nobody", "reader", "developer", and their associated permissions will be copied.
+By default, all settings will be initialized to their default values. This can be overridden using the --template parameter
+to specify a repository file from which to copy the initial settings.  When a template repository is used, almost all of
+the settings accessible from the setup page, either directly or indirectly, will be copied.  Normal users and their associated
+permissions will not be copied; however, the system default users "anonymous", "nobody", "reader", "developer", and their
+associated permissions will be copied.
 
-** Options:
+*** Options:
    --template      FILE         Copy settings from repository file
    -A|--admin-user USERNAME     Select given USERNAME as admin user
    --date-override DATETIME     Use DATETIME as time of the initial check-in
    --sha1                       Use an initial hash policy of "sha1"
 
-DATETIME may be "now" or "YYYY-MM-DDTHH:MM:SS.SSS". If in year-month-day form, it may be truncated, the "T" may be replaced by a space, and it may also name a timezone offset from UTC as "-HH:MM" (westward) or "+HH:MM" (eastward). Either no timezone suffix or "Z" means UTC.
+DATETIME may be "now" or "YYYY-MM-DDTHH:MM:SS.SSS". If in year-month-day form, it may be truncated, the "T" may be replaced
+by a space, and it may also name a timezone offset from UTC as "-HH:MM" (westward) or "+HH:MM" (eastward). Either no
+timezone suffix or "Z" means UTC.
 
 See also: clone
-* fossil settings ?SETTING? ?VALUE? ?OPTIONS?
-   or: fossil unset SETTING ?OPTIONS?
-
-The "settings" command with no arguments lists all settings and their values.  With just a SETTING name it shows the current value of that setting. With a VALUE argument it changes the property for the current repository.
-
-Settings marked as versionable are overridden by the contents of the file named .fossil-settings/PROPERTY in the check-out root, if that file exists.
-
-The "unset" command clears a setting.
-
-Settings can have both a "local" repository-only value and "global" value that applies to all repositories.  The local values are stored in the "config" table of the repository and the global values are stored in the configuration database.  If both a local and a global value exists for a setting, the local value takes precedence.  This command normally operates on the local settings.  Use the --global option to change global settings.
-
-** Options:
-  --global   set or unset the given property globally instead of setting or unsetting it for the open repository only.
-
-  --exact    only consider exact name matches.
-
-See also: configuration
-* fossil update ?OPTIONS? ?VERSION? ?FILES...?
+** fossil update ?OPTIONS? ?VERSION? ?FILES...?
 
 Change the version of the current checkout to VERSION.  Any uncommitted changes are retained and applied to the new checkout.
 
-The VERSION argument can be a specific version or tag or branch name.  If the VERSION argument is omitted, then the leaf of the subtree that begins at the current version is used, if there is only a single leaf.  VERSION can also be "current" to select the leaf of the current version or "latest" to select the most recent check-in.
+The VERSION argument can be a specific version or tag or branch name.  If the VERSION argument is omitted, then the leaf of
+the subtree that begins at the current version is used, if there is only a single leaf.  VERSION can also be "current" to
+select the leaf of the current version or "latest" to select the most recent check-in.
 
-If one or more FILES are listed after the VERSION then only the named files are candidates to be updated, and any updates to them will be treated as edits to the current version. Using a directory name for one of the FILES arguments is the same as using every subdirectory and file beneath that directory.
+If one or more FILES are listed after the VERSION then only the named files are candidates to be updated, and any updates to
+them will be treated as edits to the current version. Using a directory name for one of the FILES arguments is the same as
+using every subdirectory and file beneath that directory.
 
-If FILES is omitted, all files in the current checkout are subject to being updated and the version of the current checkout is changed to VERSION. Any uncommitted changes are retained and applied to the new checkout.
+If FILES is omitted, all files in the current checkout are subject to being updated and the version of the current checkout
+is changed to VERSION. Any uncommitted changes are retained and applied to the new checkout.
 
-The -n or --dry-run option causes this command to do a "dry run". It prints out what would have happened but does not actually make any changes to the current checkout or the repository.
+The -n or --dry-run option causes this command to do a "dry run". It prints out what would have happened but does not actually
+make any changes to the current checkout or the repository.
 
 The -v or --verbose option prints status information about unchanged files in addition to those file that actually do change.
 
-** Options:
+*** Options:
   --case-sensitive BOOL  Override case-sensitive setting
   --debug                Print debug information on stdout
   --latest               Acceptable in place of VERSION, update to latest version
@@ -2061,20 +2303,18 @@ The -v or --verbose option prints status information about unchanged files in ad
  -K|--keep-merge-files   On merge conflict, retain the temporary files used for merging, named *-baseline, *-original, and *-merge.
 
 See also: revert
-* fossil cache SUBCOMMAND
+** fossil cache SUBCOMMAND
 
 Manage the cache used for potentially expensive web pages such as /zip and /tarball.   SUBCOMMAND can be:
 
    clear        Remove all entries from the cache.
-
    init         Create the cache file if it does not already exist.
-
    list|ls      List the keys and content sizes and other stats for all entries currently in the cache.
-
    status       Show a summary of the cache status.
 
-The cache is stored in a file that is distinct from the repository but that is held in the same directory as the repository.  The cache file can be deleted in order to completely disable the cache.
-* fossil rm|delete|forget FILE1 ?FILE2 ...?
+The cache is stored in a file that is distinct from the repository but that is held in the same directory as the repository.
+The cache file can be deleted in order to completely disable the cache.
+** fossil rm|delete|forget FILE1 ?FILE2 ...?
 
 Remove one or more files or directories from the repository.
 
@@ -2084,7 +2324,7 @@ The 'forget' command never removes files from disk, even when the command line o
 
 WARNING: If the "--hard" option is specified -OR- the "mv-rm-files" setting is non-zero, files WILL BE removed from disk as well. This does NOT apply to the 'forget' command.
 
-** Options:
+*** Options:
   --soft                  Skip removing files from the checkout. This supersedes the --hard option.
   --hard                  Remove files from the checkout.
   --case-sensitive BOOL   Override the case-sensitive setting.
@@ -2093,36 +2333,15 @@ WARNING: If the "--hard" option is specified -OR- the "mv-rm-files" setting is n
   -v|--verbose            Outputs information about each --reset file. Only usable with --reset.
 
 See also: addremove, add
-* fossil open REPOSITORY ?VERSION? ?OPTIONS?
-
-Open a new connection to the repository name REPOSITORY.  A checkout for the repository is created with its root at the current working directory, or in DIR if the "--workdir DIR" is used.  If VERSION is specified then that version is checked out.  Otherwise the most recent check-in on the main branch (usually "trunk") is used.
-
-REPOSITORY can be the filename for a repository that already exists on the local machine or it can be a URI for a remote repository.  If REPOSITORY is a URI in one of the formats recognized by the clone command, then remote repo is first cloned, then the clone is opened. The clone will be stored in the current directory, or in DIR if the "--repodir DIR" option is used. The name of the clone will be taken from the last term of the URI. For "http:" and "https:" URIs, you can append an extra term to the end of the URI to get any repository name you like. For example:
-
-    fossil open https://fossil-scm.org/home/new-name
-
-The base URI for cloning is "https://fossil-scm.org/home".  The extra "new-name" term means that the cloned repository will be called "new-name.fossil".
-
-** Options:
-  --empty           Initialize checkout as being empty, but still connected with the local repository. If you commit this checkout, it will become a new "initial" commit in the repository.
-  -f|--force        Continue with the open even if the working directory is not empty.
-  --force-missing   Force opening a repository with missing content
-  --keep            Only modify the manifest and manifest.uuid files
-  --nested          Allow opening a repository inside an opened checkout
-  --repodir DIR     If REPOSITORY is a URI that will be cloned, store the clone in DIR rather than in "."
-  --setmtime        Set timestamps of all files to match their SCM-side times (the timestamp of the last checkin which modified them).
-  --workdir DIR     Use DIR as the working directory instead of ".". The DIR directory is created if it does not exist.
-
-See also: close, clone
-* fossil sha1sum FILE...
+** fossil sha1sum FILE...
 
 Compute an SHA1 checksum of all files named on the command-line. If a file is named "-" then take its content from standard input.
-** Options:
+*** Options:
 
    -h|--dereference     If FILE is a symbolic link, compute the hash on the object that the link points to.  Normally, the hash is over the name of the object that the link points to.
 
 See also: md5sum, sha3sum
-* fossil user SUBCOMMAND ...  ?-R|--repository REPO?
+** fossil user SUBCOMMAND ...  ?-R|--repository REPO?
 
 Run various subcommands on users of the open repository or of the repository identified by the -R or --repository option.
 
@@ -2150,79 +2369,13 @@ Run various subcommands on users of the open repository or of the repository ide
   fossil user password USERNAME ?PASSWORD?
 
        Change the web access password for a user.
-* fossil cat FILENAME ... ?OPTIONS?
-
-Print on standard output the content of one or more files as they exist in the repository.  The version currently checked out is shown by default. Other versions may be specified using the -r option.
-
-** Options:
-   -R|--repository REPO       Extract artifacts from repository REPO
-   -r VERSION                 The specific check-in containing the file
-
-See also: finfo
-* fossil fts-config ?SUBCOMMAND? ?ARGUMENT?
-
-The "fossil fts-config" command configures the full-text search capabilities of the repository.  Subcommands:
-
-    reindex            Rebuild the search index.  This is a no-op if index search is disabled
-
-    index (on|off)     Turn the search index on or off
-
-    enable cdtwe       Enable various kinds of search. c=Check-ins, d=Documents, t=Tickets, w=Wiki, e=Tech Notes.
-
-    disable cdtwe      Disable various kinds of search
-
-    stemmer (on|off)   Turn the Porter stemmer on or off for indexed search.  (Unindexed search is never stemmed.)
-
-The current search settings are displayed after any changes are applied. Run this command with no arguments to simply see the settings.
-* fossil pikchr [options] ?INFILE? ?OUTFILE?
-
-Accepts a pikchr script as input and outputs the rendered script as an SVG graphic. The INFILE and OUTFILE options default to stdin resp. stdout, and the names "-" can be used as aliases for those streams.
-
-** Options:
-
-   -div       On success, add a DIV wrapper around the resulting SVG output which limits its max-width to its computed maximum ideal size.
-
-   -div-indent  Like -div but indent the div.
-
-   -div-center  Like -div but center the div.
-
-   -div-left    Like -div but float the div left.
-
-   -div-right   Like -div but float the div right.
-
-   -div-toggle  Set the 'toggle' CSS class on the div (used by the JavaScript-side post-processor).
-
-   -div-source  Set the 'source' CSS class on the div, which tells CSS to hide the SVG and reveal the source by default.
-
-   -src       Store the input pikchr's source code in the output as a separate element adjacent to the SVG one. Implied by -div-source.
-               
-
-   -th        Process the input using TH1 before passing it to pikchr.
-
-   -th-novar  Disable $var and $<var> TH1 processing. Use this if the pikchr script uses '$' for its own purposes and that causes issues. This only affects parsing of '$' outside of TH1 script blocks. Code in such blocks is unaffected.
-
-   -th-nosvg  When using -th, output the post-TH1'd script instead of the pikchr-rendered output.
-
-   -th-trace  Trace TH1 execution (for debugging purposes).
-
-
-The -div-indent/center/left/right flags may not be combined.
-
-TH1-related Notes and Caveats:
-
-If the -th flag is used, this command must open a fossil database for certain functionality to work (via a checkout or the -R REPO flag). If opening a db fails, execution will continue but any TH1 commands which require a db will trigger a fatal error.
-
-In Fossil skins, TH1 variables in the form $varName are expanded as-is and those in the form $<varName> are htmlized in the resulting output. This processor disables the htmlizing step, so $x and $<x> are equivalent unless the TH1-processed pikchr script invokes the TH1 command [enable_htmlify 1] to enable it. Normally that option will interfere with pikchr output, however, e.g. by HTML-encoding double-quotes.
-
-Many of the fossil-installed TH1 functions simply do not make any
-sense for pikchr scripts.
-* fossil sha3sum FILE...
+** fossil sha3sum FILE...
 
 Compute an SHA3 checksum of all files named on the command-line. If a file is named "-" then take its content from standard input.
 
 To be clear:  The official NIST FIPS-202 implementation of SHA3 with the added 01 padding is used, not the original Keccak submission.
 
-** Options:
+*** Options:
 
    --224               Compute a SHA3-224 hash
    --256               Compute a SHA3-256 hash (the default)
@@ -2232,7 +2385,7 @@ To be clear:  The official NIST FIPS-202 implementation of SHA3 with the added 0
    -h|--dereference    If FILE is a symbolic link, compute the hash on the object pointed to, not on the link itself.
 
 See also: md5sum, sha1sum
-* fossil unversioned SUBCOMMAND ARGS...
+** fossil unversioned SUBCOMMAND ARGS...
    or: fossil uv SUBCOMMAND ARGS..
 
 Unversioned files (UV-files) are artifacts that are synced and are available for download but which do not preserve history.  Only the most recent version of each UV-file is retained.  Changes to an UV-file are permanent and cannot be undone, so use appropriate caution with this command.
@@ -2281,7 +2434,7 @@ Subcommands:
   --mtime TIMESTAMP       Use TIMESTAMP instead of "now" for the "add",
                           "edit", "remove", and "touch" subcommands.
   -R|--repository REPO    Use FILE as the repository
-* fossil ?cgi? FILE
+** fossil ?cgi? FILE
 
 This command causes Fossil to generate reply to a CGI request.
 
@@ -2329,131 +2482,12 @@ The following control lines are recognized:
 Most CGI files contain only a "repository:" line.  It is uncommon to use any other option.
 
 See also: http, server, winsrv
-* fossil diff|gdiff ?OPTIONS? ?FILE1? ?FILE2 ...?
-
-Show the difference between the current version of each of the FILEs specified (as they exist on disk) and that same file as it was checked out.  Or if the FILE arguments are omitted, show the unsaved changes currently in the working check-out.
-
-If the "--from VERSION" or "-r VERSION" option is used it specifies the source check-in for the diff operation.  If not specified, the source check-in is the base check-in for the current check-out.
-
-If the "--to VERSION" option appears, it specifies the check-in from which the second version of the file or files is taken.  If there is no "--to" option then the (possibly edited) files in the current check-out are used.
-
-The "--checkin VERSION" option shows the changes made by check-in VERSION relative to its primary parent.
-
-The "-i" command-line option forces the use of the internal diff logic rather than any external diff program that might be configured using the "setting" command.  If no external diff program is configured, then the "-i" option is a no-op.  The "-i" option converts "gdiff" into "diff".
-
-The "-v" or "--verbose" option causes the complete text of added or deleted files to be displayed. -N and --new-file are aliases for verbose mode.
-
-The "--diff-binary" option enables or disables the inclusion of binary files when using an external diff program.
-
-The "--binary" option causes files matching the glob PATTERN to be treated as binary when considering if they should be used with external diff program. This option overrides the "binary-glob" setting.
-
-** Options:
-  --binary PATTERN            Treat files that match the glob PATTERN as binary
-  --branch BRANCH             Show diff of all changes on BRANCH
-  --brief                     Show filenames only
-  --checkin VERSION           Show diff of all changes in VERSION
-  --command PROG              External diff program. Overrides "diff-command"
-  -c|--context N              Use N lines of context
-  --diff-binary BOOL          Include binary files with external commands
-  --exec-abs-paths            Force absolute path names on external commands
-  --exec-rel-paths            Force relative path names on external commands
-  -r|--from VERSION           Select VERSION as source for the diff
-  -i|--internal               Use internal diff logic
-  --numstat                   Show only the number of lines delete and added
-  -y|--side-by-side           Side-by-side diff
-  --strip-trailing-cr         Strip trailing CR
-  --tclsh PATH                Tcl/Tk used for --tk (default: "tclsh")
-  --tk                        Launch a Tcl/Tk GUI for display
-  --to VERSION                Select VERSION as target for the diff
-  --undo                      Diff against the "undo" buffer
-  --unified                   Unified diff
-  -v|--verbose                Output complete text of added or deleted files
-  -N|--new-file               Alias for --verbose
-  -w|--ignore-all-space       Ignore white space when comparing lines
-  -W|--width N                Width of lines in side-by-side diff
-  -Z|--ignore-trailing-space  Ignore changes to end-of-line whitespace
-* fossil annotate|blame|praise ?OPTIONS? FILENAME
-
-Output the text of a file with markings to show when each line of the file was last modified.  The version currently checked out is shown by default. Other versions may be specified using the -r option.  The "annotate" command shows line numbers and omits the username.  The "blame" and "praise" commands show the user who made each check-in.
-
-Reverse Annotations:  Normally, these commands look at versions of FILENAME moving backwards in time back toward the root check-in, and thus the output shows the most recent change to each line.  However, if the -o|--origin option is used to specify some future check-in (example: "-o trunk") then these commands show changes moving towards that alternative origin.  Thus using "-o trunk" on an historical version of the file shows the first time each line in the file was changed or removed by any subsequent check-in.
-
-** Options:
-  --filevers                  Show file version numbers rather than check-in versions
-  -r|--revision VERSION       The specific check-in containing the file
-  -l|--log                    List all versions analyzed
-  -n|--limit LIMIT            LIMIT can be one of:
-                                N      Up to N versions
-                                Xs     As much as possible in X seconds
-                                none   No limit
-  -o|--origin VERSION         The origin check-in. By default this is the root of the repository. Set to "trunk" or similar for a reverse annotation.
-  -w|--ignore-all-space       Ignore white space when comparing lines
-  -Z|--ignore-trailing-space  Ignore whitespace at line end
-
-See also: info, finfo, timeline
-* fossil shell
+** fossil shell
 
 Prompt for lines of input from stdin.  Parse each line and evaluate it as a separate fossil command, in a child process.  The initial "fossil" is omitted from each line.
 
 This command only works on unix-like platforms that support fork(). It is non-functional on Windows.
-* fossil version ?-v|--verbose?
-
-Print the source code version number for the fossil executable. If the verbose option is specified, additional details will be output about what optional features this binary was compiled with
-* fossil changes|status ?OPTIONS? ?PATHS ...?
-
-Report the change status of files in the current checkout.  If one or more PATHS are specified, only changes among the named files and directories are reported.  Directories are searched recursively.
-
-The status command is similar to the changes command, except it lacks several of the options supported by changes and it has its own header and footer information.  The header information is a subset of that shown by the info command, and the footer shows if there are any forks. Change type classification is always enabled for the status command.
-
-Each line of output is the name of a changed file, with paths shown according to the "relative-paths" setting, unless overridden by the --abs-paths or --rel-paths options.
-
-By default, all changed files are selected for display.  This behavior can be overridden by using one or more filter options (listed below), in which case only files with the specified change type(s) are shown. As a special case, the --no-merge option does not inhibit this default. This default shows exactly the set of changes that would be checked in by the commit command.
-
-If no filter options are used, or if the --merge option is used, the artifact hash of each merge contributor check-in version is displayed at the end of the report.  The --no-merge option is useful to display the default set of changed files without the merge contributors.
-
-If change type classification is enabled, each output line starts with a code describing the file's change type, e.g. EDITED or RENAMED.  It is enabled by default unless exactly one change type is selected.  For the purposes of determining the default, --changed counts as selecting one change type.  The default can be overridden by the --classify or --no-classify options.
-
---edited and --updated produce disjoint sets.  --updated shows a file only when it is identical to that of its merge contributor, and the change type classification is UPDATED_BY_MERGE or UPDATED_BY_INTEGRATE. If the file had to be merged with any other changes, it is considered to be merged or conflicted and therefore will be shown by --edited, not --updated, with types EDITED or CONFLICT.  The --changed option can be used to display the union of --edited and --updated.
-
---differ is so named because it lists all the differences between the checked-out version and the checkout directory.  In addition to the default changes (excluding --merge), it lists extra files which (if ignore-glob is set correctly) may be worth adding.  Prior to doing a commit, it is good practice to check --differ to see not only which changes would be committed but also if any files should be added.
-
-If both --merge and --no-merge are used, --no-merge has priority.  The same is true of --classify and --no-classify.
-
-The "fossil changes --extra" command is equivalent to "fossil extras".
-
-General options:
-   --abs-paths       Display absolute pathnames.
-   --rel-paths       Display pathnames relative to the current working directory.
-   --hash            Verify file status using hashing rather than relying on file mtimes.
-   --case-sensitive BOOL  Override case-sensitive setting.
-   --dotfiles        Include unmanaged files beginning with a dot.
-   --ignore <CSG>    Ignore unmanaged files matching CSG glob patterns.
-
-Options specific to the changes command:
-   --header          Identify the repository if report is non-empty.
-   -v|--verbose      Say "(none)" if the change report is empty.
-   --classify        Start each line with the file's change type.
-   --no-classify     Do not print file change types.
-
-Filter options:
-   --edited          Display edited, merged, and conflicted files.
-   --updated         Display files updated by merge/integrate.
-   --changed         Combination of the above two options.
-   --missing         Display missing files.
-   --added           Display added files.
-   --deleted         Display deleted files.
-   --renamed         Display renamed files.
-   --conflict        Display files having merge conflicts.
-   --meta            Display files with metadata changes.
-   --unchanged       Display unchanged files.
-   --all             Display all managed files, i.e. all of the above.
-   --extra           Display unmanaged files.
-   --differ          Display modified and extra files.
-   --merge           Display merge contributors.
-   --no-merge        Do not display merge contributors.
-
-See also: extras, ls
-* fossil git SUBCOMMAND
+** fossil git SUBCOMMAND
 
 Do incremental import or export operations between Fossil and Git. Subcommands:
 
@@ -2482,7 +2516,7 @@ Do incremental import or export operations between Fossil and Git. Subcommands:
   fossil git status
 
       Show the status of the current Git mirror, if there is one.
-* fossil publish ?--only? TAGS...
+** fossil publish ?--only? TAGS...
 
 Cause artifacts identified by TAGS... to be published (made non-private). This can be used (for example) to convert a private branch into a public branch, or to publish a bundle that was imported privately.
 
@@ -2491,13 +2525,13 @@ If any of TAGS names a branch, then all check-ins on the most recent instance of
 If any of TAGS name check-ins then all files and tags associated with those check-ins are also published automatically.  Except if the --only option is used, then only the specific artifacts identified by TAGS are published.
 
 If a TAG is already public, this command is a harmless no-op.
-* fossil sql ?OPTIONS?
+** fossil sql ?OPTIONS?
 
 Run the sqlite3 command-line shell on the Fossil repository identified by the -R option, or on the current repository. See https://www.sqlite.org/cli.html for additional information about the sqlite3 command-line shell.
 
 WARNING:  Careless use of this command can corrupt a Fossil repository in ways that are unrecoverable.  Be sure you know what you are doing before running any SQL commands that modify the repository database.  Use the --readonly option to prevent accidental damage to the repository.
 
-** Options:
+*** Options:
 
    --no-repository           Skip opening the repository database.
    --readonly                Open the repository read-only.  No changes are allowed.  This is a recommended safety precaution to prevent repository damage.
@@ -2525,15 +2559,15 @@ The following SQL extensions are provided with this Fossil-enhanced version of t
    obscure(T)                Obfuscate the text password T so that its original value is not readily visible.  Fossil uses this same algorithm when storing passwords of remote URLs.
    regexp                    The REGEXP operator works, unlike in standard SQLite.
    symbolic_name_to_rid(X)   Return the BLOB.RID corresponding to symbolic name X.
-* fossil whatis NAME
+** fossil whatis NAME
 
 Resolve the symbol NAME into its canonical artifact hash artifact name and provide a description of what role that artifact plays.
 
-** Options:
+*** Options:
 
    --type TYPE          Only find artifacts of TYPE (one of: 'ci', 't', 'w', 'g', or 'e')
    -v|--verbose         Provide extra information (such as the RID)
-* fossil chat [SUBCOMMAND] [--remote URL] [ARGS...]
+** fossil chat [SUBCOMMAND] [--remote URL] [ARGS...]
 
 This command performs actions associated with the /chat instance on the default remote Fossil repository (the Fossil repository whose URL shows when you run the "fossil remote" command) or to the URL specified by the --remote option.  If there is no default remote Fossil repository and the --remote option is omitted, then this command fails with an error.
 
@@ -2550,29 +2584,13 @@ The following subcommands are supported:
        --unsafe               Allow the use of unencrypted http://
 
 Additional subcommands may be added in the future.
-* fossil grep [OPTIONS] PATTERN FILENAME ...
-
-Attempt to match the given POSIX extended regular expression PATTERN over all historic versions of FILENAME.  The search begins with the most recent version of the file and moves backwards in time.  Multiple FILENAMEs can be specified, in which case all named files are searched in reverse chronological order.
-
-For details of the supported regular expression dialect, see
-https://fossil-scm.org/fossil/doc/trunk/www/grep.md
-
-** Options:
-
-    -c|--count                 Suppress normal output; instead print a count of the number of matching files
-    -i|--ignore-case           Ignore case
-    -l|--files-with-matches    List only hash for each match
-    --once                     Stop searching after the first match
-    -s|--no-messages           Suppress error messages about nonexistent or unreadable files
-    -v|--invert-match          Invert the sense of matching.  Show only files that have no matches. Implies -l
-    --verbose                  Show each file as it is analyzed
-* fossil pull ?URL? ?options?
+** fossil pull ?URL? ?options?
 
 Pull all sharable changes from a remote repository into the local repository.  Sharable changes include public check-ins, edits to wiki pages, tickets, and tech-notes, as well as forum content.  Add the --private option to pull private branches.  Use the "configuration pull" command to pull website configuration details.
 
 If URL is not specified, then the URL from the most recent clone, push, pull, remote, or sync command is used.  See "fossil help clone" for details on the URL formats.
 
-** Options:
+*** Options:
 
   -B|--httpauth USER:PASS    Credentials for the simple HTTP auth protocol, if required by the remote website
   --from-parent-project      Pull content from the parent project
@@ -2588,7 +2606,7 @@ If URL is not specified, then the URL from the most recent clone, push, pull, re
   --verily                   Exchange extra information with the remote to ensure no content is overlooked
 
 See also: clone, config, push, remote, sync
-* fossil sqlar VERSION OUTPUTFILE [OPTIONS]
+** fossil sqlar VERSION OUTPUTFILE [OPTIONS]
 
 Generate an SQLAR archive for a check-in.  If the --name option is used, its argument becomes the name of the top-level directory in the resulting SQLAR archive.  If --name is omitted, the top-level directory name is derived from the project name, the check-in date and time, and the artifact ID of the check-in.
 
@@ -2596,13 +2614,13 @@ The GLOBLIST argument to --exclude and --include can be a comma-separated list o
 
 If OUTPUTFILE is an empty string or "/dev/null" then no SQLAR archive is actually generated.  This feature can be used in combination with the --list option to get a list of the filename that would be in the SQLAR archive had it actually been generated.
 
-** Options:
+*** Options:
   -X|--exclude GLOBLIST   Comma-separated list of GLOBs of files to exclude
   --include GLOBLIST      Comma-separated list of GLOBs of files to include
   -l|--list               Show archive content on stdout
   --name DIRECTORYNAME    The name of the top-level directory in the archive
   -R REPOSITORY           Specify a Fossil repository
-* fossil wiki (export|create|commit|list) WikiName
+** fossil wiki (export|create|commit|list) WikiName
 
 Run various subcommands to work with wiki entries or tech notes.
 
@@ -2641,23 +2659,7 @@ Run various subcommands to work with wiki entries or tech notes.
 DATETIME may be "now" or "YYYY-MM-DDTHH:MM:SS.SSS". If in year-month-day form, it may be truncated, the "T" may be replaced by a space, and it may also name a timezone offset from UTC as "-HH:MM" (westward) or "+HH:MM" (eastward). Either no timezone suffix or "Z" means UTC.
 
 The "Sandbox" wiki pseudo-page is a special case. Its name is checked case-insensitively and either "create" or "commit" may be used to update its contents.
-* fossil checkout ?VERSION | --latest? ?OPTIONS?
-   or: fossil co ?VERSION | --latest? ?OPTIONS?
-
-NOTE: Most people use "fossil update" instead of "fossil checkout" for day-to-day operations.  If you are new to Fossil and trying to learn your way around, it is recommended that you become familiar with the "fossil update" command first.
-
-This command changes the current check-out to the version specified as an argument.  The command aborts if there are edited files in the current checkout unless the --force option is used.  The --keep option leaves files on disk unchanged, except the manifest and manifest.uuid files.
-
-The --latest flag can be used in place of VERSION to checkout the latest version in the repository.
-
-** Options:
-   --force           Ignore edited files in the current checkout
-   --keep            Only update the manifest and manifest.uuid files
-   --force-missing   Force checkout even if content is missing
-   --setmtime        Set timestamps of all files to match their SCM-side times (the timestamp of the last checkin which modified them)
-
-See also: update
-* fossil hash-policy ?NEW-POLICY?
+** fossil hash-policy ?NEW-POLICY?
 
 Query or set the hash policy for the current repository.  Available hash policies are as follows:
 
@@ -2713,14 +2715,14 @@ COMMON OPTIONS:
 
   --explain         Make no changes, but show what would happen
   --dry-run         An alias for --explain
-* fossil sql ?OPTIONS?
+** fossil sql ?OPTIONS?
 
 Run the sqlite3 command-line shell on the Fossil repository identified by the -R option, or on the current repository.
 See https://www.sqlite.org/cli.html for additional information about the sqlite3 command-line shell.
 
 WARNING:  Careless use of this command can corrupt a Fossil repository in ways that are unrecoverable.  Be sure you know what you are doing before running any SQL commands that modify the repository database.  Use the --readonly option to prevent accidental damage to the repository.
 
-** Options:
+*** Options:
 
    --no-repository           Skip opening the repository database.
    --readonly                Open the repository read-only.  No changes are allowed.  This is a recommended safety precaution to prevent repository damage.
@@ -2748,7 +2750,7 @@ The following SQL extensions are provided with this Fossil-enhanced version of t
    obscure(T)                Obfuscate the text password T so that its original value is not readily visible.  Fossil uses this same algorithm when storing passwords of remote URLs.
    regexp                    The REGEXP operator works, unlike in standard SQLite.
    symbolic_name_to_rid(X)   Return the BLOB.RID corresponding to symbolic name X.
-* fossil zip VERSION OUTPUTFILE [OPTIONS]
+** fossil zip VERSION OUTPUTFILE [OPTIONS]
 
 Generate a ZIP archive for a check-in.  If the --name option is used, its argument becomes the name of the top-level directory in the resulting ZIP archive.  If --name is omitted, the top-level directory name is derived from the project name, the check-in date and time, and the artifact ID of the check-in.
 
@@ -2756,7 +2758,7 @@ The GLOBLIST argument to --exclude and --include can be a comma-separated list o
 
 If OUTPUTFILE is an empty string or "/dev/null" then no ZIP archive is actually generated.  This feature can be used in combination with the --list option to get a list of the filename that would be in the ZIP archive had it actually been generated.
 
-** Options:
+*** Options:
   -X|--exclude GLOBLIST   Comma-separated list of GLOBs of files to exclude
   --include GLOBLIST      Comma-separated list of GLOBs of files to include
   -l|--list               Show archive content on stdout
@@ -2764,3 +2766,29 @@ If OUTPUTFILE is an empty string or "/dev/null" then no ZIP archive is actually 
   -R REPOSITORY           Specify a Fossil repository
   
   
+
+** fossil push ?URL? ?options?
+
+Push all sharable changes from the local repository to a remote repository.  Sharable changes include public check-ins, edits
+to wiki pages, tickets, and tech-notes, as well as forum content.  Use --private to also push private branches.
+Use the "configuration push" command to push website configuration details.
+
+If URL is not specified, then the URL from the most recent clone, push, pull, remote, or sync command is used.
+See "fossil help clone" for details on the URL formats.
+
+** Options:
+
+  -B|--httpauth USER:PASS    Credentials for the simple HTTP auth protocol,
+                             if required by the remote website
+  --ipv4                     Use only IPv4, not IPv6
+  --once                     Do not remember URL for subsequent syncs
+  --proxy PROXY              Use the specified HTTP proxy
+  --private                  Push private branches too
+  -R|--repository REPO       Local repository to push from
+  --ssl-identity FILE        Local SSL credentials, if requested by remote
+  --ssh-command SSH          Use SSH as the "ssh" command
+  -v|--verbose               Additional (debugging) output
+  --verily                   Exchange extra information with the remote
+                             to ensure no content is overlooked
+
+See also: clone, config, pull, remote, sync

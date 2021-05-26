@@ -12,41 +12,57 @@ Emphasis is on:
 ** 0. Installation
 *** Toolchain level
    Not going to start here. The code for Fossil has been compiled, with attention to JSON API 
+*** System prep
+    sudo adduser     fossil
+    sudo mkdir      /home/fossil/bin
+    sudo cp    -rfv /home/osboxes/src/fossil-snapshot-20210429/* /home/fossil/bin
+    sudo chown -Rv   fossil:fossil /home/fossil
 *** Service installation 
 #+name: setup_fossil_service
 #+begin_src sh
-  FOSSIL=~/src/fossil-snapshot-20210429/
+  FOSSIL=/home/fossil/bin/
   TCPPORT=9000
-  USER_SERVICE=~/.config/systemd/user
-  USER_MUSEUM=~/.config/fossil/museum
+  USER_SERVICE=/home/osboxes/.config/systemd/user
+  USER_MUSEUM=/home/osboxes/.config/fossil/museum
   mkdir -p ${USER_MUSEUM}
   mkdir -p ${USER_SERVICE}
   FOSSIL_ARGS="--create --localauth --localhost --jsmode inline --nojail --nossl --port ${TCPPORT} ${USER_MUSEUM}"
-  cat <<EOF>${USER_SERVICE}/fossil.socket
+  cat <<EOF>${USER_SERVICE}/fossil.service
   [Unit]
   Description=Fossil user server
   After=network.target
 
   [Service]
   WorkingDirectory=${USER_MUSEUM}
-  ExecStart=${FOSSIL}fossil server --port ${FOSSIL_ARGS}
+  ExecStart=${FOSSIL}fossil server ${FOSSIL_ARGS}
   Restart=always
   RestartSec=3
-
-  [Socket]
-  ListenStream=127.0.0.1:${TCPPORT}
-
 
   [Install]
   WantedBy=sockets.target
   WantedBy=multi-user.target 
   EOF
-  chmod +x ${USER_SERVICE}/fossil.socket
+  chmod +x ${USER_SERVICE}/fossil.service
   systemctl --user daemon-reload
-  systemctl --user enable fossil.socket
-  systemctl --user start fossil.socket
-  systemctl --user status -l fossil.socket 
+  systemctl --user enable fossil.service
+  systemctl --user start fossil.service
+  systemctl --user status -l fossil.service 
 #+end_src
+
+#+RESULTS: setup_fossil_service
+| ●       | fossil.service                                                         | -                                                   | Fossil                | user           | server      |           |        |          |         |        |      |                                     |
+| Loaded: | loaded                                                                 | (/home/osboxes/.config/systemd/user/fossil.service; | enabled;              | vendor         | preset:     | disabled) |        |          |         |        |      |                                     |
+| Active: | active                                                                 | (running)                                           | since                 | Tue            | 2021-05-25  | 23:54:07  | EDT;   | 9ms      | ago     |        |      |                                     |
+| Main    | PID:                                                                   | 18858                                               | (fossil)              |                |             |           |        |          |         |        |      |                                     |
+| Tasks:  | 1                                                                      | (limit:                                             | 9499)                 |                |             |           |        |          |         |        |      |                                     |
+| Memory: | 244.0K                                                                 |                                                     |                       |                |             |           |        |          |         |        |      |                                     |
+| CPU:    | 1ms                                                                    |                                                     |                       |                |             |           |        |          |         |        |      |                                     |
+| CGroup: | /user.slice/user-1000.slice/user@1000.service/app.slice/fossil.service |                                                     |                       |                |             |           |        |          |         |        |      |                                     |
+| └─18858 | /home/fossil/bin/fossil                                                | server                                              | --create              | --localauth    | --localhost | --jsmode  | inline | --nojail | --nossl | --port | 9000 | /home/osboxes/.config/fossil/museum |
+|         |                                                                        |                                                     |                       |                |             |           |        |          |         |        |      |                                     |
+| May     | 25                                                                     | 23:54:07                                            | localhost.localdomain | systemd[1477]: | Started     | Fossil    | user   | server.  |         |        |      |                                     |
+
+journalctl --output=verbose --user-unit=fossil.service
 
 ** 1. Startup
    How we make sure the Fossil service is running
