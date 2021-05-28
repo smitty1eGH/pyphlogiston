@@ -60,7 +60,7 @@ fossil server --create --localhost --nossl --jsmode bundled SOME_DIRECTORY
   --usepidkey            Use saved encryption key from parent process.  This is only necessary when using SEE on Windows.
 
 See also: cgi, http, winsrv
-* fossil version ?-v|--verbose?
+** fossil version ?-v|--verbose?
 
 Print the source code version number for the fossil executable. If the verbose option is specified, additional details will
 be output about what optional features this binary was compiled with
