@@ -86,18 +86,10 @@ given, the default depends on the global setting, or the operating system defaul
    --case-sensitive BOOL   Override the case-sensitive setting
    --dotfiles              Include files beginning with a dot (".")
    -f|--force              Add files without prompting
-   --ignore CSG            Ignore unmanaged files matching patterns from
-                           the Comma Separated Glob (CSG) pattern list
-   --clean CSG             Also ignore files matching patterns from
-                           the Comma Separated Glob (CSG) list
-   --reset                 Reset the ADDED state of a checkout, such
-                           that all newly-added (but not yet committed)
-                           files are no longer added. No flags other
-                           than --verbose and --dry-run may be used
-                           with --reset.
-   --allow-reserved        Permit filenames which are reserved on
-                           Windows platforms. Such files cannot be
-                           checked out on Windows, so use with care.
+   --ignore         CSG    Ignore unmanaged files matching patterns from the Comma Separated Glob (CSG) pattern list
+   --clean          CSG    Also ignore files matching patterns from the Comma Separated Glob (CSG) list
+   --reset                 Reset the ADDED state of a checkout, such that all newly-added (but not yet committed) files are no longer added. No flags other than --verbose and --dry-run may be used with --reset.
+   --allow-reserved        Permit filenames which are reserved on Windows platforms. Such files cannot be checked out on Windows, so use with care.
 
 The following options are only valid with --reset:
    -v|--verbose            Output information about each --reset file

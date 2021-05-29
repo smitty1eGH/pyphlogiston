@@ -5,8 +5,11 @@ black==21.5b1
 certifi==2020.12.5
 chardet==4.0.0
 click==8.0.1
+dataclasses-json==0.5.3
 idna==2.10
 iniconfig==1.1.1
+marshmallow==3.12.1
+marshmallow-enum==1.5.1
 mypy==0.812
 mypy-extensions==0.4.3
 packaging==20.9
@@ -19,7 +22,9 @@ pytest==6.2.4
 regex==2021.4.4
 requests==2.25.1
 soupsieve==2.2.1
+stringcase==1.2.0
 toml==0.10.2
 typed-ast==1.4.3
 typing-extensions==3.10.0.0
+typing-inspect==0.6.0
 urllib3==1.26.5
