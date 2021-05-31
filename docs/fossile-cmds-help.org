@@ -64,6 +64,123 @@ See also: cgi, http, winsrv
 
 Print the source code version number for the fossil executable. If the verbose option is specified, additional details will
 be output about what optional features this binary was compiled with
+** fossil new ?OPTIONS? FILENAME
+   or: fossil init ?OPTIONS? FILENAME
+
+Create a repository for a new project in the file named FILENAME. This command is distinct from "clone".  The "clone"
+command makes a copy of an existing project.  This command starts a new project.
+
+By default, your current login name is used to create the default admin user. This can be overridden using the
+-A|--admin-user parameter.
+
+By default, all settings will be initialized to their default values. This can be overridden using the --template
+parameter to specify a repository file from which to copy the initial settings.  When a template repository is used,
+almost all of the settings accessible from the setup page, either directly or indirectly, will be copied.  Normal users
+and their associated permissions will not be copied; however, the system default users "anonymous", "nobody", "reader",
+"developer", and their associated permissions will be copied.
+
+*** Options:
+   --template      FILE         Copy settings from repository file
+   -A|--admin-user USERNAME     Select given USERNAME as admin user
+   --date-override DATETIME     Use DATETIME as time of the initial check-in
+   --sha1                       Use an initial hash policy of "sha1"
+
+DATETIME may be "now" or "YYYY-MM-DDTHH:MM:SS.SSS". If in year-month-day form, it may be truncated, the "T" may be replaced by a space, and it may also name a timezone offset from UTC as "-HH:MM" (westward) or "+HH:MM" (eastward). Either no timezone suffix or "Z" means UTC.
+
+See also: clone
+** fossil clone ?OPTIONS? URI ?FILENAME?
+
+Make a clone of a repository specified by URI in the local file named FILENAME.  If FILENAME is omitted, then an appropriate filename
+is deduced from last element of the path in the URL.
+
+URI may be one of the following forms ([...] denotes optional elements):
+
+ * HTTP/HTTPS protocol:
+     http[s]://[userid[:password]@]host[:port][/path]
+
+ * SSH protocol:
+     ssh://[userid@]host[:port]/path/to/repo.fossil[?fossil=path/fossil.exe]
+
+ * Filesystem:
+     [file://]path/to/repo.fossil
+
+For ssh and filesystem, path must have an extra leading '/' to use an absolute path.
+
+Use %HH escapes for special characters in the userid and password.  For example "%40" in place of "@", "%2f" in place of "/",
+and "%3a" in place of ":".
+
+Note that in Fossil (in contrast to some other DVCSes) a repository is distinct from a checkout.  Cloning a repository is not
+the same thing as opening a repository.  This command always clones the repository.  This command might also open the repository,
+but only if the --no-open option is omitted and either the --workdir option is included or the FILENAME argument is omitted.
+Use the separate open command to open a repository that was previously cloned and already exists on the local machine.
+
+By default, the current login name is used to create the default admin user for the new clone. This can be overridden using the
+-A|--admin-user parameter.
+
+*** Options:
+   -A|--admin-user USERNAME   Make USERNAME the administrator
+   -B|--httpauth USER:PASS    Add HTTP Basic Authorization to requests
+   --nested                   Allow opening a repository inside an opened checkout
+   --nocompress               Omit extra delta compression
+   --no-open                  Clone only.  Do not open a check-out.
+   --once                     Don't remember the URI.
+   --private                  Also clone private branches
+   --save-http-password       Remember the HTTP password without asking
+   --ssh-command|-c SSH       Use SSH as the "ssh" command
+   --ssl-identity FILENAME    Use the SSL identity if requested by the server
+   -u|--unversioned           Also sync unversioned content
+   -v|--verbose               Show more statistics in output
+   --workdir DIR              Also open a checkout in DIR
+
+See also: init, open
+** fossil checkout ?VERSION | --latest? ?OPTIONS?
+   or: fossil co ?VERSION | --latest? ?OPTIONS?
+
+NOTE: Most people use "fossil update" instead of "fossil checkout" for day-to-day operations.  If you are new to Fossil and
+trying to learn your way around, it is recommended that you become familiar with the "fossil update" command first.
+
+This command changes the current check-out to the version specified as an argument.  The command aborts if there are edited
+files in the current checkout unless the --force option is used.  The --keep option leaves files on disk unchanged, except
+the manifest and manifest.uuid files.
+
+The --latest flag can be used in place of VERSION to checkout the latest version in the repository.
+
+*** Options:
+   --force           Ignore edited files in the current checkout
+   --keep            Only update the manifest and manifest.uuid files
+   --force-missing   Force checkout even if content is missing
+   --setmtime        Set timestamps of all files to match their SCM-side times (the timestamp of the last checkin which modified them)
+
+See also: update
+** fossil open REPOSITORY ?VERSION? ?OPTIONS?
+
+Open a new connection to the repository name REPOSITORY.  A checkout for the repository is created with its root at the current
+working directory, or in DIR if the "--workdir DIR" is used.  If VERSION is specified then that version is checked out.
+Otherwise the most recent check-in on the main branch (usually "trunk") is used.
+
+REPOSITORY can be the filename for a repository that already exists on the local machine or it can be a URI for a remote
+repository.  If REPOSITORY is a URI in one of the formats recognized by the clone command, then remote repo is first cloned,
+then the clone is opened. The clone will be stored in the current directory, or in DIR if the "--repodir DIR" option is used.
+The name of the clone will be taken from the last term of the URI. For "http:" and "https:" URIs, you can append an extra term
+to the end of the URI to get any repository name you like. For example:
+
+    fossil open https://fossil-scm.org/home/new-name
+
+The base URI for cloning is "https://fossil-scm.org/home".  The extra "new-name" term means that the cloned repository will be
+called "new-name.fossil".
+
+*** Options:
+  --empty           Initialize checkout as being empty, but still connected with the local repository. If you commit this
+                    checkout, it will become a new "initial" commit in the repository.
+  -f|--force        Continue with the open even if the working directory is not empty.
+  --force-missing   Force opening a repository with missing content
+  --keep            Only modify the manifest and manifest.uuid files
+  --nested          Allow opening a repository inside an opened checkout
+  --repodir DIR     If REPOSITORY is a URI that will be cloned, store the clone in DIR rather than in "."
+  --setmtime        Set timestamps of all files to match their SCM-side times (the timestamp of the last checkin which modified them).
+  --workdir DIR     Use DIR as the working directory instead of ".". The DIR directory is created if it does not exist.
+
+See also: close, clone
 * fossil add ?OPTIONS? FILE1 ?FILE2 ...?
 
 Make arrangements to add one or more files or directories to the current checkout at the next commit.
@@ -402,25 +519,6 @@ will be taken as an artifact or baseline ID and fossil will probably complain th
   fossil update tag:decaf
 
 will assume that "decaf" is a tag/branch name.
-* fossil checkout ?VERSION | --latest? ?OPTIONS?
-   or: fossil co ?VERSION | --latest? ?OPTIONS?
-
-NOTE: Most people use "fossil update" instead of "fossil checkout" for day-to-day operations.  If you are new to Fossil and
-trying to learn your way around, it is recommended that you become familiar with the "fossil update" command first.
-
-This command changes the current check-out to the version specified as an argument.  The command aborts if there are edited
-files in the current checkout unless the --force option is used.  The --keep option leaves files on disk unchanged, except
-the manifest and manifest.uuid files.
-
-The --latest flag can be used in place of VERSION to checkout the latest version in the repository.
-
-** Options:
-   --force           Ignore edited files in the current checkout
-   --keep            Only update the manifest and manifest.uuid files
-   --force-missing   Force checkout even if content is missing
-   --setmtime        Set timestamps of all files to match their SCM-side times (the timestamp of the last checkin which modified them)
-
-See also: update
 * fossil info ?VERSION | REPOSITORY_FILENAME? ?OPTIONS?
 
 With no arguments, provide information about the current tree. If an argument is specified, provide information about the
@@ -523,30 +621,6 @@ size or mtime.
 DATETIME may be "now" or "YYYY-MM-DDTHH:MM:SS.SSS". If in year-month-day form, it may be truncated, the "T" may be replaced by a space, and it may also name a timezone offset from UTC as "-HH:MM" (westward) or "+HH:MM" (eastward). Either no timezone suffix or "Z" means UTC.
 
 See also: branch, changes, update, extras, sync
-* fossil new ?OPTIONS? FILENAME
-   or: fossil init ?OPTIONS? FILENAME
-
-Create a repository for a new project in the file named FILENAME. This command is distinct from "clone".  The "clone"
-command makes a copy of an existing project.  This command starts a new project.
-
-By default, your current login name is used to create the default admin user. This can be overridden using the
--A|--admin-user parameter.
-
-By default, all settings will be initialized to their default values. This can be overridden using the --template
-parameter to specify a repository file from which to copy the initial settings.  When a template repository is used,
-almost all of the settings accessible from the setup page, either directly or indirectly, will be copied.  Normal users
-and their associated permissions will not be copied; however, the system default users "anonymous", "nobody", "reader",
-"developer", and their associated permissions will be copied.
-
-** Options:
-   --template      FILE         Copy settings from repository file
-   -A|--admin-user USERNAME     Select given USERNAME as admin user
-   --date-override DATETIME     Use DATETIME as time of the initial check-in
-   --sha1                       Use an initial hash policy of "sha1"
-
-DATETIME may be "now" or "YYYY-MM-DDTHH:MM:SS.SSS". If in year-month-day form, it may be truncated, the "T" may be replaced by a space, and it may also name a timezone offset from UTC as "-HH:MM" (westward) or "+HH:MM" (eastward). Either no timezone suffix or "Z" means UTC.
-
-See also: clone
 * fossil ticket SUBCOMMAND ...
 
 Run various subcommands to control tickets
@@ -1073,34 +1147,6 @@ on the local settings.  Use the --global option to change global settings.
   --exact    only consider exact name matches.
 
 See also: configuration
-* fossil open REPOSITORY ?VERSION? ?OPTIONS?
-
-Open a new connection to the repository name REPOSITORY.  A checkout for the repository is created with its root at the current
-working directory, or in DIR if the "--workdir DIR" is used.  If VERSION is specified then that version is checked out.
-Otherwise the most recent check-in on the main branch (usually "trunk") is used.
-
-REPOSITORY can be the filename for a repository that already exists on the local machine or it can be a URI for a remote
-repository.  If REPOSITORY is a URI in one of the formats recognized by the clone command, then remote repo is first cloned,
-then the clone is opened. The clone will be stored in the current directory, or in DIR if the "--repodir DIR" option is used.
-The name of the clone will be taken from the last term of the URI. For "http:" and "https:" URIs, you can append an extra term
-to the end of the URI to get any repository name you like. For example:
-
-    fossil open https://fossil-scm.org/home/new-name
-
-The base URI for cloning is "https://fossil-scm.org/home".  The extra "new-name" term means that the cloned repository will be
-called "new-name.fossil".
-
-** Options:
-  --empty           Initialize checkout as being empty, but still connected with the local repository. If you commit this checkout, it will become a new "initial" commit in the repository.
-  -f|--force        Continue with the open even if the working directory is not empty.
-  --force-missing   Force opening a repository with missing content
-  --keep            Only modify the manifest and manifest.uuid files
-  --nested          Allow opening a repository inside an opened checkout
-  --repodir DIR     If REPOSITORY is a URI that will be cloned, store the clone in DIR rather than in "."
-  --setmtime        Set timestamps of all files to match their SCM-side times (the timestamp of the last checkin which modified them).
-  --workdir DIR     Use DIR as the working directory instead of ".". The DIR directory is created if it does not exist.
-
-See also: close, clone
 * fossil cat FILENAME ... ?OPTIONS?
 
 Print on standard output the content of one or more files as they exist in the repository.  The version currently checked
@@ -1427,46 +1473,6 @@ Reconstruct the named repository database from the core records.  Run this comma
   --stats           Show artifact statistics after rebuilding
   --vacuum          Run VACUUM on the database after rebuilding
   --wal             Set Write-Ahead-Log journalling mode on the database
-** fossil clone ?OPTIONS? URI ?FILENAME?
-
-Make a clone of a repository specified by URI in the local file named FILENAME.  If FILENAME is omitted, then an appropriate filename
-is deduced from last element of the path in the URL.
-
-URI may be one of the following forms ([...] denotes optional elements):
-
- * HTTP/HTTPS protocol:
-     http[s]://[userid[:password]@]host[:port][/path]
-
- * SSH protocol:
-     ssh://[userid@]host[:port]/path/to/repo.fossil[?fossil=path/fossil.exe]
-
- * Filesystem:
-     [file://]path/to/repo.fossil
-
-For ssh and filesystem, path must have an extra leading '/' to use an absolute path.
-
-Use %HH escapes for special characters in the userid and password.  For example "%40" in place of "@", "%2f" in place of "/", and "%3a" in place of ":".
-
-Note that in Fossil (in contrast to some other DVCSes) a repository is distinct from a checkout.  Cloning a repository is not the same thing as opening a repository.  This command always clones the repository.  This command might also open the repository, but only if the --no-open option is omitted and either the --workdir option is included or the FILENAME argument is omitted.  Use the separate open command to open a repository that was previously cloned and already exists on the local machine.
-
-By default, the current login name is used to create the default admin user for the new clone. This can be overridden using the -A|--admin-user parameter.
-
-*** Options:
-   -A|--admin-user USERNAME   Make USERNAME the administrator
-   -B|--httpauth USER:PASS    Add HTTP Basic Authorization to requests
-   --nested                   Allow opening a repository inside an opened checkout
-   --nocompress               Omit extra delta compression
-   --no-open                  Clone only.  Do not open a check-out.
-   --once                     Don't remember the URI.
-   --private                  Also clone private branches
-   --save-http-password       Remember the HTTP password without asking
-   --ssh-command|-c SSH       Use SSH as the "ssh" command
-   --ssl-identity FILENAME    Use the SSL identity if requested by the server
-   -u|--unversioned           Also sync unversioned content
-   -v|--verbose               Show more statistics in output
-   --workdir DIR              Also open a checkout in DIR
-
-See also: init, open
 ** fossil http ?REPOSITORY? ?OPTIONS?
 
 Handle a single HTTP request appearing on stdin.  The resulting webpage is delivered on stdout.  This method is used to
@@ -2421,7 +2427,7 @@ Subcommands:
 
    touch FILE ...         Update the TIMESTAMP on all of the listed files
 
-** Options:
+*** Options:
 
   --mtime TIMESTAMP       Use TIMESTAMP instead of "now" for the "add",
                           "edit", "remove", and "touch" subcommands.
@@ -2758,7 +2764,6 @@ If OUTPUTFILE is an empty string or "/dev/null" then no ZIP archive is actually 
   -R REPOSITORY           Specify a Fossil repository
   
   
-
 ** fossil push ?URL? ?options?
 
 Push all sharable changes from the local repository to a remote repository.  Sharable changes include public check-ins, edits
@@ -2768,7 +2773,7 @@ Use the "configuration push" command to push website configuration details.
 If URL is not specified, then the URL from the most recent clone, push, pull, remote, or sync command is used.
 See "fossil help clone" for details on the URL formats.
 
-** Options:
+*** Options:
 
   -B|--httpauth USER:PASS    Credentials for the simple HTTP auth protocol,
                              if required by the remote website
