@@ -1,4 +1,4 @@
-from os import chdir
+from os import chdir, getcwd
 from pathlib import Path
 from shutil import copy2 as copy
 from subprocess import run
@@ -17,7 +17,7 @@ def setup_script(proj_path, fossil):
     2. set up a data/checkout directory
     3. set up a data/repo directory
     4. initialize data/repo/repo.fossil
-    5. checkout data/repo/repo.fossil to data/checkout
+    5. checkout data/repo/repo.fossil to data/stage
 
     return the staging path
     '''
@@ -43,12 +43,36 @@ def setup_script(proj_path, fossil):
     out = run(co, capture_output=True)
     assert out.returncode == 0
 
-def add_files(proj_path, fossil):
+def _run_command(fossil, args):
     '''
     '''
-    f = []
-    f.append(fossil)
-    f.append('add')
-    f.append(f'{proj_path}/data/stage/*')
-    out = run(f, capture_output=True)
-    assert out.returncode == 0
+    print([fossil] + args)
+    out = run([fossil] + args, capture_output=True)
+    try:
+        assert out.returncode == 0
+    except AssertionError as e:
+        print(f'_run_command error for {fossil} {args}\n\tError => {out}')
+    return out
+
+def add_files(proj_path, fossil, args):
+    '''
+    '''
+    _args=['add', f'{proj_path}']
+    for a in args:
+        _args.append(a)
+    return _run_command(fossil, _args)
+
+def commit_files(proj_path, fossil, tag, message):
+    args=['commit', '--no-prompt' ,'--nosign' ,'--tag' ,tag ,'-m' ,message ,f'{proj_path}/data/stage/*']
+    return _run_command(fossil,args)
+
+def add_and_commit(proj_path, fossil, tag, message):
+    '''Temporarily shift to proj_path to do the add.
+       TODO: go with a chdir context manager if this is more needful
+    '''
+    old=getcwd()
+    chdir(proj_path)
+    out0=add_files(proj_path, fossil,[])
+    out1=commit_files(proj_path, fossil, tag, message)
+    chdir(old)
+    return out0,out1

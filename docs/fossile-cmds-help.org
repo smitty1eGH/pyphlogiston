@@ -181,7 +181,7 @@ called "new-name.fossil".
   --workdir DIR     Use DIR as the working directory instead of ".". The DIR directory is created if it does not exist.
 
 See also: close, clone
-* fossil add ?OPTIONS? FILE1 ?FILE2 ...?
+** fossil add ?OPTIONS? FILE1 ?FILE2 ...?
 
 Make arrangements to add one or more files or directories to the current checkout at the next commit.
 
@@ -198,7 +198,7 @@ This can be prevented using the -f|--force option.
 The --case-sensitive option determines whether or not filenames should be treated case sensitive or not. If the option is not
 given, the default depends on the global setting, or the operating system default, if not set.
 
-** Options:
+*** Options:
 
    --case-sensitive BOOL   Override the case-sensitive setting
    --dotfiles              Include files beginning with a dot (".")
@@ -213,26 +213,6 @@ The following options are only valid with --reset:
    -n|--dry-run            Display instead of run actions
 
 See also: addremove, rm
-
-* fossil 3-way-merge BASELINE V1 V2 MERGED
-
-Inputs are files BASELINE, V1, and V2.  The file MERGED is generated as output.
-
-BASELINE is a common ancestor of two files V1 and V2 that have diverging edits.
-The generated output file MERGED is the combination of all changes in both V1 and V2.
-
-This command has no effect on the Fossil repository.
-It is a utility command made available for the convenience of users.
-This command can be used, for example, to help import changes from an upstream project.
-
-Suppose an upstream project has a file named "Xup.c" which is imported with modifications to the local project as "Xlocal.c".
-Suppose further that the "Xbase.c" is an exact copy of the last imported "Xup.c".
-Then to import the latest "Xup.c" while preserving all the local changes:
-
-     fossil 3-way-merge Xbase.c Xlocal.c Xup.c Xlocal.c
-     cp Xup.c Xbase.c
-     # Verify that everything still works
-     fossil commit
 
 * fossil commit ?OPTIONS? ?FILE...?
    or: fossil ci ?OPTIONS? ?FILE...?
@@ -271,41 +251,58 @@ The --tag option applies the symbolic tag name to the check-in.
 
 The --hash option detects edited files by computing each file's artifact hash rather than just checking for changes to its size or mtime.
 
-** Options:
+*** Options:
+   --no-prompt                This option disables prompting the user for input and assumes an answer of 'No' for every question.
+   --nosign                   do not attempt to sign this commit with gpg
+   --tag             TAG-NAME assign given tag TAG-NAME to the check-in
+   -m|--comment  COMMENT-TEXT use COMMENT-TEXT as commit comment
    --allow-conflict           allow unresolved merge conflicts
    --allow-empty              allow a commit with no changes
    --allow-fork               allow the commit to fork
    --allow-older              allow a commit older than its ancestor
    --baseline                 use a baseline manifest in the commit process
-   --bgcolor COLOR            apply COLOR to this one check-in only
-   --branch NEW-BRANCH-NAME   check in to this new branch
-   --branchcolor COLOR        apply given COLOR to the branch
+   --bgcolor         COLOR    apply COLOR to this one check-in only
+   --branch   NEW-BRANCH-NAME check in to this new branch
+   --branchcolor     COLOR    apply given COLOR to the branch
    --close                    close the branch being committed
-   --date-override DATETIME   DATE to use instead of 'now'
+   --date-override   DATETIME DATE to use instead of 'now'
    --delta                    use a delta manifest in the commit process
-   --hash                     verify file status using hashing rather
-                              than relying on file mtimes
+   --hash                     verify file status using hashing rather than relying on file mtimes
    --integrate                close all merged-in branches
-   -m|--comment COMMENT-TEXT  use COMMENT-TEXT as commit comment
    -M|--message-file FILE     read the commit comment from given file
-   --mimetype MIMETYPE        mimetype of check-in comment
+   --mimetype        MIMETYPE mimetype of check-in comment
    -n|--dry-run               If given, display instead of run actions
    -v|--verbose               Show a diff in the commit message prompt
-   --no-prompt                This option disables prompting the user for
-                              input and assumes an answer of 'No' for every
-                              question.
    --no-warnings              omit all warnings about file contents
    --no-verify                do not run before-commit hooks
-   --nosign                   do not attempt to sign this commit with gpg
    --override-lock            allow a check-in even though parent is locked
    --private                  do not sync changes and their descendants
-   --tag TAG-NAME             assign given tag TAG-NAME to the check-in
    --trace                    debug tracing.
-   --user-override USER       USER to use instead of the current default
+   --user-override   USER     USER to use instead of the current default
 
 DATETIME may be "now" or "YYYY-MM-DDTHH:MM:SS.SSS". If in year-month-day form, it may be truncated, the "T" may be replaced by a space, and it may also name a timezone offset from UTC as "-HH:MM" (westward) or "+HH:MM" (eastward). Either no timezone suffix or "Z" means UTC.
 
 See also: branch, changes, update, extras, sync
+* fossil 3-way-merge BASELINE V1 V2 MERGED
+
+Inputs are files BASELINE, V1, and V2.  The file MERGED is generated as output.
+
+BASELINE is a common ancestor of two files V1 and V2 that have diverging edits.
+The generated output file MERGED is the combination of all changes in both V1 and V2.
+
+This command has no effect on the Fossil repository.
+It is a utility command made available for the convenience of users.
+This command can be used, for example, to help import changes from an upstream project.
+
+Suppose an upstream project has a file named "Xup.c" which is imported with modifications to the local project as "Xlocal.c".
+Suppose further that the "Xbase.c" is an exact copy of the last imported "Xup.c".
+Then to import the latest "Xup.c" while preserving all the local changes:
+
+     fossil 3-way-merge Xbase.c Xlocal.c Xup.c Xlocal.c
+     cp Xup.c Xbase.c
+     # Verify that everything still works
+     fossil commit
+
 * fossil clean ?OPTIONS? ?PATH ...?
 
 Delete all "extra" files in the source tree.  "Extra" files are files that are not officially part of the checkout.
