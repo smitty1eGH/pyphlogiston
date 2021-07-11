@@ -25,20 +25,19 @@ def setup_script(proj_path, fossil):
     # 1, 2, 3:
     b = Path(str(proj_path) + 'data')
     b.mkdir()
-    for d in ['stage','repo']:
+    for d in ['/stage','/repo']:
         c = Path(str(b) + d)
         c.mkdir()
 
     # 4.
-    r = Path(f'{str(proj_path)}/data/repo' )
-    r.mkdir(parents=True)
+    r = Path(f'{str(proj_path)}data/repo' )
     chdir(str(r))
     init = [fossil,'init', 'phologiston.fossil']
     out = run(init, capture_output=True)
     assert out.returncode == 0
 
     # 5.
-    s = Path(f'{str(proj_path)}/data/stage' )
+    s = Path(f'{str(proj_path)}data/stage' )
     co =  [fossil,'open', f'{str(r)}/phologiston.fossil', '--workdir', str(s)]
     out = run(co, capture_output=True)
     assert out.returncode == 0
@@ -63,7 +62,7 @@ def add_files(proj_path, fossil, args):
     return _run_command(fossil, _args)
 
 def commit_files(proj_path, fossil, tag, message):
-    args=['commit', '--no-prompt' ,'--nosign' ,'--tag' ,tag ,'-m' ,message ,f'{proj_path}/data/stage/*']
+    args=['commit', '--no-prompt' ,'--nosign' ,'--tag' ,tag ,'-m' ,message ,f'{proj_path}']
     return _run_command(fossil,args)
 
 def add_and_commit(proj_path, fossil, tag, message):
