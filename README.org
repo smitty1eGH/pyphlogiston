@@ -1,14 +1,12 @@
 * Pyphlogiston
 
-Wrapper for Fossil (https://fossil-scm.org/home/doc/trunk/www/index.wiki) JSON API, since there wasn't any prior art on offer.
-
-This is an incremental effort that is used as an editable checkout for a private project, and as such may appear strangely incomplete.
+A simple, experimental python/sqlite3/fossile storage solution for document-style JSON data records.
 
 Emphasis is on:
 - Pytest to build it up nicely, if not completely.
-- Later python features. Backward compatibility not considered.
+- Latest python features. Backward compatibility not considered.
 
-* Steps:
+* Setup Steps:
 ** 0. Installation
 *** Toolchain level
    Not going to start here. The code for Fossil has been compiled, with attention to JSON API 
@@ -72,3 +70,38 @@ journalctl --output=verbose --user-unit=fossil.service
 *** 4.0 Change a record
 *** 4.1 Merge records
 *** 4.2 Split record
+
+* Example Usage
+
+** The 'schema' is captured two Enums and a dict
+There are a variety of data type in AWS, and we'd like to study their relationships.
+
+We need to define two enumerations as arguments
+
+class PType(IntEnum):
+    '''Each PType will become:
+    - a (prefixed) table in a SQLite3 database
+    - a directory in a staging filesystem tree
+    '''
+
+class DType(IntEnum):
+    '''The types of data rows in the PType tables.
+    '''
+
+dtype2table = {
+    DType.entry0.value : 'table0',
+    DType.entry1.value : 'tableX',
+    ...
+    }
+
+** Worked example
+AWS botocore service files have (at least) four PType entries. What we really care 
+about are the operations (methods) and their argument/return types (shapes)
+
+class PType(IntEnum):
+    metadata = 0
+    operations = 1
+    shapes = 2
+    documentation = 3
+
+class DType(IntEnum):
