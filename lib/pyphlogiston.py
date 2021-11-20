@@ -9,17 +9,16 @@ def setup_script(proj_path, fossil):
     FOSSIL    is the path the the fossil executable
 
     Build:
-    PROJ_PATH/data
-                  /stage
+    PROJ_PATH/data/pyphlogiston.sqlite
+                  /stage/
                   /repo/phlogiston.fossil
 
-    1. set up a data directory
-    2. set up a data/checkout directory
-    3. set up a data/repo directory
-    4. initialize data/repo/repo.fossil
-    5. checkout data/repo/repo.fossil to data/stage
-
-    return the staging path
+    1. set up           data/
+    2. initialize       data/pyphlogiston.sqlite
+    3. set up           data/stage/
+    4. set up           data/repo
+    5. initialize       data/repo/repo.fossil
+    6. commit stage/ to data/repo/repo.fossil
     '''
     #TMP_PATH would be the install directory
     # 1, 2, 3:

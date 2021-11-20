@@ -1,6 +1,16 @@
 * Pyphlogiston
 
-A simple, experimental python/sqlite3/fossile storage solution for document-style JSON data records.
+A simple, experimental python/sqlite3/fossil storage solution for document-style JSON data records.
+
+The storage layer looks like:
+
+data/fossil_repo/fossil.fossil
+    |-pyphlogiston.sqlite
+    `-[uuid-files]
+
+There is a fossil repo to track changes to the uuid-files which are staged
+  for versioning in fossil.
+Data and its connections are kept in the pyphlogiston.sqlite file.
 
 Emphasis is on:
 - Pytest to build it up nicely, if not completely.
@@ -73,35 +83,4 @@ journalctl --output=verbose --user-unit=fossil.service
 
 * Example Usage
 
-** The 'schema' is captured two Enums and a dict
-There are a variety of data type in AWS, and we'd like to study their relationships.
 
-We need to define two enumerations as arguments
-
-class PType(IntEnum):
-    '''Each PType will become:
-    - a (prefixed) table in a SQLite3 database
-    - a directory in a staging filesystem tree
-    '''
-
-class DType(IntEnum):
-    '''The types of data rows in the PType tables.
-    '''
-
-dtype2table = {
-    DType.entry0.value : 'table0',
-    DType.entry1.value : 'tableX',
-    ...
-    }
-
-** Worked example
-AWS botocore service files have (at least) four PType entries. What we really care 
-about are the operations (methods) and their argument/return types (shapes)
-
-class PType(IntEnum):
-    metadata = 0
-    operations = 1
-    shapes = 2
-    documentation = 3
-
-class DType(IntEnum):

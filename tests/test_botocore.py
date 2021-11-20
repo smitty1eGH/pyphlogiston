@@ -1,14 +1,21 @@
+from collections import OrderedDict
 from dataclasses import dataclass
 from enum import Enum
+import json
+import pprint
 
 import pytest
 import botocore.session
 from botocore.loaders import Loader
 
+
+from lib.dao import DAO
+
 class APIType(Enum):
+    '''These are the values that can appear in the DAO how table.
+    '''
     IAMShape = 0
     IAMOp    = 1
-
 
 @dataclass
 class APIShape():
@@ -43,6 +50,29 @@ class APIOp():
     documentation : str = ''
     apitype   : APIType=APIType.IAMOp.value
 
+def toD(od):
+    '''Return a botocore OrderedDict as a regular dict.
+    '''
+    out={}
+    for k,v in od.items():
+        if isinstance(v,OrderedDict):
+            out[k]=toD(v)
+        elif isinstance(v,list):
+            tmp={}
+            for l in v:
+                m=toD(l)
+                for n,o in m.items():
+                    if n in tmp:
+                        tmp[n].append(o)
+                    else:
+                        tmp[n]=[o]
+            out[k]=tmp
+        else:
+            out[k]=v
+    return out
+
+def toJ(od):
+    return json.loads(json.dumps(toD(od)))
 
 @pytest.fixture
 def iam_service():
@@ -74,24 +104,31 @@ def test_IAMOps(iam_enums):
         n=od['name']
         try:
             i=od['input']['shape']
+            print(f'input: {n}\t{i}')
         except KeyError as e:
-            i=None
+            pass
         try:
             o=od['output']['shape']
+            print(f'ouput: {n}\t{o}')
         except KeyError as e:
-            o=None
-        #print(f'{n}\t{i}\t{o}')
+            pass
 
-    types={'map','structure', 'list'}
-    #n=sh['name']
-    for o in iam_enums[2]:
-        sh=iam_enums[0]['shapes'][o.name]
-        if sh['type'] in types:
-            try:
-                #Need to add a comprehension on "members" to determine
-                #  relevant shapes
-                print(f'{o.name}\t{sh["members"]}')
-            except KeyError as e:
-                pass
+   # types={'map','structure', 'list'}
+   # #n=sh['name']
+   # for o in iam_enums[2]:
+   #     sh=iam_enums[0]['shapes'][o.name]
+   #     if sh['type'] in types:
+   #         try:
+   #             #Need to add a comprehension on "members" to determine
+   #             #  relevant shapes
+   #             print(f'{o.name}\t{sh["members"]}')
+   #         except KeyError as e:
+   #             pass
 
+def test_DAO_0():
+    dao = DAO(APIType)
 
+def test_DAO_1(iam_enums):
+    dao = DAO(APIType)
+    for o in iam_enums[1]:
+        print(iam_enums[0]['operations'][o.name])
