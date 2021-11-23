@@ -66,8 +66,14 @@ class DAO():
     def dao_select(self,category,name):
         return DAO.FINDME % (category.name,name)
 
-    def dao_insert(self,data):
+    def _dao_insert(self,data):
         return DAO.INSERTER % (data.category.name,data.uuid,data)
+
+    def dao_insert(self,data):
+        '''Data come in as JSON.
+        Check for category, name, and UUID before building SQL
+        '''
+        pass
 
     def dao_ins_how(self,parent,child,data=None):
         return DAO.INS_HOW & (parent.puuid,parent.ptype.value,child.cuuid,child.ctype.value,data)

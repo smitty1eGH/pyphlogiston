@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 import json
 import pprint
+from uuid import uuid4 as uu
 
 import pytest
 import botocore.session
@@ -129,6 +130,11 @@ def test_DAO_0():
     dao = DAO(APIType)
 
 def test_DAO_1(iam_enums):
+    '''Do the Ops
+    '''
     dao = DAO(APIType)
     for o in iam_enums[1]:
-        print(iam_enums[0]['operations'][o.name])
+        op = toD(iam_enums[0]['operations'][o.name])
+        op['uuid'] = str(uu())
+        oq = APIOp(**{k:v for k,v in op.items()})
+        print(op)
