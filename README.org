@@ -1,14 +1,16 @@
 * Pyphlogiston
 
-A simple, experimental python/sqlite3/fossil storage solution for document-style JSON data records.
+A simple, experimental python/sqlite3/fossil storage solution for 
+document-style JSON data records that fall into some categories
+defined by an enumeration.
 
 The storage layer looks like:
 
-data/fossil_repo/fossil.fossil
-    |-pyphlogiston.sqlite
-    `-[uuid-files]
+data/repo/fossil.fossil            # history
+    |-pyphlogiston.sqlite          # current state
+    `-/[enum-value]/[uuid-files]   # staging
 
-There is a fossil repo to track changes to the uuid-files which are staged
+There is a fossil repo to track changes to the [/[enum.value]/uuid-files] which are staged
   for versioning in fossil.
 Data and its connections are kept in the pyphlogiston.sqlite file.
 

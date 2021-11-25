@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from dataclasses import dataclass
+from dataclasses_json import dataclass_json
 from enum import Enum
 import json
 import pprint
@@ -18,6 +19,7 @@ class APIType(Enum):
     IAMShape = 0
     IAMOp    = 1
 
+@dataclass_json
 @dataclass
 class APIShape():
     uuid      : str
@@ -37,9 +39,9 @@ class APIShape():
     member    : str = ''
     sensitive : str = ''
     documentation : str = ''
-    apitype   : APIType=APIType.IAMShape.value
+    apitype   : APIType=APIType.IAMShape.name
 
-
+@dataclass_json
 @dataclass
 class APIOp():
     uuid      : str = ''
@@ -49,7 +51,7 @@ class APIOp():
     output    : str = ''
     errors    : str = ''
     documentation : str = ''
-    apitype   : APIType=APIType.IAMOp.value
+    apitype   : APIType=APIType.IAMOp.name
 
 def toD(od):
     '''Return a botocore OrderedDict as a regular dict.
@@ -98,7 +100,8 @@ def test_loader(iam_file):
         print(k)
 
 def test_IAMOps(iam_enums):
-    '''
+    '''These ordered dicts are harder to work with.
+         by the time we demote to regular dicts, life is easier
     '''
     for o in iam_enums[1]:
         od=iam_enums[0]['operations'][o.name]
@@ -114,21 +117,11 @@ def test_IAMOps(iam_enums):
         except KeyError as e:
             pass
 
-   # types={'map','structure', 'list'}
-   # #n=sh['name']
-   # for o in iam_enums[2]:
-   #     sh=iam_enums[0]['shapes'][o.name]
-   #     if sh['type'] in types:
-   #         try:
-   #             #Need to add a comprehension on "members" to determine
-   #             #  relevant shapes
-   #             print(f'{o.name}\t{sh["members"]}')
-   #         except KeyError as e:
-   #             pass
-
+@pytest.mark.skip
 def test_DAO_0():
     dao = DAO(APIType)
 
+@pytest.mark.skip
 def test_DAO_1(iam_enums):
     '''Do the Ops
     '''
@@ -137,4 +130,48 @@ def test_DAO_1(iam_enums):
         op = toD(iam_enums[0]['operations'][o.name])
         op['uuid'] = str(uu())
         oq = APIOp(**{k:v for k,v in op.items()})
-        print(op)
+
+@pytest.mark.skip
+def test_DAO_2(iam_enums):
+    '''Ops to SQL
+        print(getattr(oq,'input' ,None))
+        print(getattr(oq,'output',None))
+    '''
+    dao = DAO(APIType)
+    for o in iam_enums[1]:
+        op = toD(iam_enums[0]['operations'][o.name])
+        op['uuid'] = str(uu())
+        oq = APIOp(**{k:v for k,v in op.items()})
+        print(dao.dao_insert(oq))
+
+def test_DAO_3(iam_enums):
+    '''First we will enumerate the shapes, and then
+        build up the ops.
+    Ops to SQL
+        print(getattr(oq,'input' ,None))
+        print(getattr(oq,'output',None))
+    '''
+    dao = DAO(APIType)
+    shapes={}
+    types={'map','structure','list'}
+    for o in iam_enums[2]:
+        sh=iam_enums[0]['shapes'][o.name]
+        if sh['type'] in types:
+            try:
+                op = toD(sh)
+            except AttributeError as e:
+                continue
+            else:
+                try:
+                    op['uuid'] = str(uu())
+                    op['name'] = o.name
+                    shapes[o.name] = op['uuid']
+                    oq = APIShape(**{k:v for k,v in op.items()})
+                except KeyError as e:
+                    print(e)
+
+    for o in iam_enums[1]:
+        op = toD(iam_enums[0]['operations'][o.name])
+        op['uuid'] = str(uu())
+        oq = APIOp(**{k:v for k,v in op.items()})
+        print(dao.dao_insert(oq))
