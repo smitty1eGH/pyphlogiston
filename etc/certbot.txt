@@ -1,0 +1,157 @@
+https://arkadiyt.com/2018/01/26/deploying-effs-certbot-in-aws-lambda/
+
+
+Arkadiy Tetelman A security blog
+Deploying EFF's Certbot in AWS Lambda
+Jan 26th, 2018 | 13 minute read
+
+This post describes the steps needed to deploy Certbot (a well-maintained LetsEncrypt/ACME client) inside AWS Lambda. The setup used below is now powering 100% automated TLS certificate renewals for this website - the lambda runs once a day and if there’s less than 30 days remaining on my existing cert it will provision a new one and import it to be served by my CDN.
+
+The post is broken down into 3 sections:
+
+    building a self-contained, deployable zip file that includes certbot and its dependencies (the bulk of the work)
+    creating an IAM role for the lambda function that gives it the necessary permissions to execute
+    creating a CloudWatch timer that triggers the lambda function once a day
+
+Building a self-contained certbot zip file
+
+Certbot is written in python and supports both python 2 & 3. We’re going to use Lambda’s python 3.6.1 runtime, and to make sure all our packages and dependencies work in the Lambda environment we’ll perform all the installation steps in an environment identical to the Lambda one. Amazon’s documentation states:
+
+    The underlying AWS Lambda execution environment is based on the following:
+
+        Public Amazon Linux AMI version (AMI name: amzn-ami-hvm-2017.03.1.20170812-x86_64-gp2) which can be accessed here.
+
+So we’ll need to bring up an EC2 instance like that.
+
+Step 1: Launch an EC2 instance with the amzn-ami-hvm-2017.03.1.20170812-x86_64-gp2 AMI. You can use the cheapest instance with all the default settings - it will not require any IAM permissions or security group configuration.
+
+Step 2: SSH onto the instance and install python3 (it’s not installed by default):
+
+# Install python 3.6.1
+sudo yum install -y gcc zlib zlib-devel openssl openssl-devel
+wget https://www.python.org/ftp/python/3.6.1/Python-3.6.1.tgz
+tar -xzvf Python-3.6.1.tgz
+cd Python-3.6.1 && ./configure && make
+sudo make install
+
+Step 3: Install virtualenv to isolate all the python dependencies, install certbot, and zip it up:
+
+# Install & activate virtualenv
+sudo /usr/local/bin/pip3 install virtualenv
+cd && /usr/local/bin/virtualenv venv
+source venv/bin/activate
+
+# Install certbot and other needed dependencies
+pip install certbot certbot-dns-route53 raven
+
+# Zip it all up
+cd venv/lib/python3.6/site-packages
+zip -r ~/lets_encrypt.zip .
+
+In addition to certbot and certbot-dns-route53 (a plugin that handles the DNS challenge during cert provisioning by updating your Route53 settings), I’ve installed raven (an exception capturing client), but if you don’t need that then you can remove it.
+
+When certbot runs it writes the generated private key and certificate to the filesystem. We’ll use little bit of glue code in a main.py driver to take those files and automatically import them into Amazon Certificate Manager (ACM). It loops over all ACM certificates and checks if each certificate has less than 30 days until expiration. If so it triggers certbot to provision a new key & cert, then reads the generated files and imports them into ACM, and finally notifies me via SNS. You can view the source here.
+
+After adding our glue code to the zip file we’ll have a working, self-contained package.
+
+Step 4: Download the zip and add the glue code:
+
+# Download the zip file from your EC2 instance
+scp ec2-user@<EC2_INSTANCE_IP>:~/lets_encrypt.zip .
+# Add main.py to the archive
+zip -g lets_encrypt.zip main.py
+
+Now the zip file can be deployed, but it still needs permissions to run.
+Creating an IAM role with the correct permissions
+
+For permissions, create an IAM role with a trust relationship for lambda.amazonaws.com (this is the principal that lambda functions assume when they execute). Then attach the inline policy below - it boils down to 4 categories:
+
+    CloudWatch permissions that all lambda functions need to log and emit metrics
+    Route53 permissions for certbot to list and update your DNS settings
+    ACM permissions for the glue code to list and import certificates
+    SNS publish permission to send notifications when a new certificate is imported
+
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "",
+            "Effect": "Allow",
+            "Action": [
+                "route53:ListHostedZones",
+                "logs:PutLogEvents",
+                "logs:CreateLogStream",
+                "logs:CreateLogGroup",
+                "cloudwatch:PutMetricData",
+                "acm:ListCertificates"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "",
+            "Effect": "Allow",
+            "Action": [
+                "sns:Publish",
+                "route53:GetChange",
+                "route53:ChangeResourceRecordSets",
+                "acm:ImportCertificate",
+                "acm:DescribeCertificate"
+            ],
+            "Resource": [
+                "arn:aws:sns:us-east-1:<AWS_ACCOUNT_ID>:alarm_topic",
+                "arn:aws:route53:::hostedzone/<HOSTED_ZONE_ID>",
+                "arn:aws:route53:::change/*",
+                "arn:aws:acm:us-east-1:<AWS_ACCOUNT_ID>:certificate/*"
+            ]
+        }
+    ]
+}
+
+Where AWS_ACCOUNT_ID and HOSTED_ZONE_ID are replaced with the relevant values in your environment.
+
+At this point you should be able to deploy the lambda function using this IAM role and run it manually. Make sure to increase the timeout of the function from the default 3 seconds - it usually completes in about 60 seconds but my configuration uses 300 (the max allowed) just for good measure.
+Creating a CloudWatch timer
+
+The last step is to create a daily trigger for the function. To do this we can:
+
+    create a CloudWatch rule with the desired schedule_expression (when should it run)
+    create a rule target (what should run) specifying the lambda function’s ARN
+    give the CloudWatch rule permission to invoke the lambda function
+
+This entire website is powered by Terraform so I’ve pasted my terraform config for it below, but it’s also very straightforward to do it from either the AWS console or cli.
+
+# Create a timer that runs every 12 hours
+resource "aws_cloudwatch_event_rule" "lets_encrypt_timer_rule" {
+  name                = "lets_encrypt_timer"
+  schedule_expression = "cron(0 */12 * * ? *)"
+}
+
+# Specify the lambda function to run
+resource "aws_cloudwatch_event_target" "lets_encrypt_timer_target" {
+  rule = "${aws_cloudwatch_event_rule.lets_encrypt_timer_rule.name}"
+  arn  = "${aws_lambda_function.lets_encrypt.arn}"
+}
+
+# Give cloudwatch permission to invoke the function
+resource "aws_lambda_permission" "permission" {
+  action = "lambda:InvokeFunction"
+  function_name = "${aws_lambda_function.lets_encrypt.function_name}"
+  principal = "events.amazonaws.com"
+  source_arn = "${aws_cloudwatch_event_rule.lets_encrypt_timer_rule.arn}"
+}
+
+Monitoring
+
+I haven’t run into any problems at all with this setup, but if something does break then I should know about it thanks to:
+
+    LetsMonitor free certificate monitoring: they’ll email me if my certificate has 7 days left until expiration
+    Sentry free exception tracking: any runtime exceptions in the lambda function get captured and emailed to me, with full stacktrace and context
+    Some CloudWatch invocation and error metrics that notify me via SNS to my email
+
+When a new certificate is generated, I get an email about it via SNS:
+
+Certificate Email
+
+Now you too can have 100% automated TLS certificate renewals!
+
+P.S. If you enjoy this kind of content feel free to follow me on Twitter: @arkadiyt

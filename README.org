@@ -21,27 +21,28 @@ Emphasis is on:
 * Setup Steps:
 ** 0. Installation
 *** Toolchain level
-   Not going to start here. The code for Fossil has been compiled, with attention to JSON API 
+     System-level installation of python3 and fossil
+     pip install of pyphlogiston
+     editing of etc/install_profile.py in the project
+*** Configuration
+     FOSSIL=/home/fossil/bin/
+     TCPPORT=9000
+     USER_SERVICE=/home/osboxes/.config/systemd/user
+     USER_MUSEUM=/home/fossil/museum
 *** System prep
-    sudo adduser       fossil
-    sudo mkdir        /home/fossil/{bin,museum}
-    cd                /home/fossil/bin
-    ln          -s    /home/osboxes/src/fossil-snapshot-20210429/fossil
-    sudo /home/osboxes/src/fossil-snapshot-20210429/fossil init /home/fossil/museum/museum.fossil
-    sudo chown  -Rv    fossil:fossil /home/fossil
-
-
-    project-id: 422d1937ecb9aab06e40d1a27781e29aeb72fc4c
-    server-id:  8a1cce0be8699e9de9d63565354806c96bd8c400
-    admin-user: root (initial password is "zMxVg5SB2E")
-
+     sudo adduser   fossil
+     sudo mkdir    /home/fossil/{bin,museum}
+     cd             $FOSSIL
+     ln -s         /home/osboxes/src/fossil-snapshot-20210429/fossil
+     sudo          /home/osboxes/src/fossil-snapshot-20210429/fossil init /home/fossil/museum/museum.fossil
+     sudo chown -Rv fossil:fossil /home/fossil
+ 
+     project-id: 422d1937ecb9aab06e40d1a27781e29aeb72fc4c
+     server-id:  8a1cce0be8699e9de9d63565354806c96bd8c400
+     admin-user: root (initial password is "zMxVg5SB2E")
 *** Service installation 
 #+name: setup_fossil_service
 #+begin_src sh
-  FOSSIL=/home/fossil/bin/
-  TCPPORT=9000
-  USER_SERVICE=/home/osboxes/.config/systemd/user
-  USER_MUSEUM=/home/fossil/museum
   mkdir -p ${USER_MUSEUM}
   mkdir -p ${USER_SERVICE}
   FOSSIL_ARGS="--create --localauth --localhost --jsmode inline --nojail --nossl --port ${TCPPORT} ${USER_MUSEUM}/museum.fossil"
@@ -66,6 +67,10 @@ Emphasis is on:
   systemctl --user start     fossil.service
   systemctl --user status -l fossil.service 
 #+end_src
+*** Initialization
+  With all of the tools in place, we initialize the fossil repo, and then we intialize the sqlite store fronting it.
+  The user needs to provide the enumeration that will be the basis for the sqlite schema.
+
 
 
 
