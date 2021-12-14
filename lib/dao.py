@@ -4,18 +4,19 @@ from uuid import uuid4 as uu
 
 
 class DAO:
-    """Data Access Object for SQLite database that is really an adjacency
-      list for a set of category tables that will be generated based
+    """Data Access Object for SQLite database that's an adjacency
+      list for a set of category tables generated based
       upon the enumeration provided to __init__
-    Category data for those tables are required to have at least `name`
-      and `type` fields; all else is optional.
-    Note that there is no UPDATE functionality; the system is versioning
-      everything in fossil.
+    Category data for those tables are required to have at least
+      - `name` and
+      - `type` fields
+    Note that there is no UPDATE functionality; the system versions
+      data using fossil.
     """
 
     DEFAULT = "__default__"
-    TBLPREF = "T"  # Prefix database object names so that we
-    VIEWPRF = "V"  #  needn't fret reserved word collisions
+    TBLPREF = "T"  # Prefix database object names to
+    VIEWPRF = "V"  #    obviate reserved word collisions
     PARENT = 0
     CHILD = 1
     FINDME = f"SELECT a.uuid FROM {VIEWPRF}%s AS a  WHERE  a.name='%s'"
@@ -27,7 +28,7 @@ class DAO:
 
     def __init__(self, categories, db_path=":memory:"):
         """Initialize a list of tables with the names of the categories
-          that will be kept in the SQLite adjacency list.
+          that retained in the SQLite adjacency list.
         Instantiate db, load default data
         """
         self.categories = categories
@@ -56,8 +57,8 @@ class DAO:
         cursor.executescript("".join(self.defs))
 
     def _defaults(self):
-        """Populate
-        - list of inserts of default values, and
+        """Populate the following:
+        - a list of inserts of default values, and
         - a global default object cache
         """
         out = []

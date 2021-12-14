@@ -102,11 +102,20 @@ def iam_enums(iam_file):
     return iam_file, IAMOps, IAMShapes
 
 
+@pytest.mark.skip
 def test_loader(iam_file):
+    '''RETURNS:
+       version
+       metadata
+       operations
+       shapes
+       documentation
+    '''
     for k in iam_file.keys():
         print(k)
 
 
+@pytest.mark.skip
 def test_IAMOps(iam_enums):
     """These ordered dicts are harder to work with.
     by the time we demote to regular dicts, life is easier
@@ -133,7 +142,8 @@ def test_DAO_0():
 
 @pytest.mark.skip
 def test_DAO_1(iam_enums):
-    """Do the Ops"""
+    """Do the Ops
+    """
     dao = DAO(APIType)
     for o in iam_enums[1]:
         op = toD(iam_enums[0]["operations"][o.name])
@@ -161,7 +171,19 @@ def test_DAO_3(iam_enums):
     Ops to SQL
         print(getattr(oq,'input' ,None))
         print(getattr(oq,'output',None))
+
+    operations entry dict keys:
+      types = {"map", "structure", "list"}
+
+    {'type', 'error', 'documentation', 'member', 'key', 'min', 'value', 'members', 'max', 'exception'}
     """
+    all_your_ops   = {}
+    all_your_uuids = {} # Generate UUIDs for any names encountered, irrespective of whether
+                        #   they have yet been encountered in the data.
+    def do_uuid(name):
+        if name not in all_your_uuids:
+            all_your_uuids[name] = str(uu())
+
     dao = DAO(APIType)
     shapes = {}
     types = {"map", "structure", "list"}
@@ -173,16 +195,26 @@ def test_DAO_3(iam_enums):
             except AttributeError as e:
                 continue
             else:
-                try:
-                    op["uuid"] = str(uu())
-                    op["name"] = o.name
-                    shapes[o.name] = op["uuid"]
-                    oq = APIShape(**{k: v for k, v in op.items()})
-                except KeyError as e:
-                    print(e)
+                match op['type']:
+                    case 'map':
+                        do_uuid(op["key"]["shape"])
+                        do_uuid(op["value"]["shape"])
+                    case 'structure':
+                        for m in op["members"]:
+                            do_uuid(f'{m}')
+                    case 'list':
+                        do_uuid(op["member"]["shape"])
+                        name=op["member"]["shape"]
+                op["name"] = name
+                op["uuid"] = all_your_uuids[name]
+                shapes[name] = APIShape(**{k: v for k, v in op.items()})
 
+    for k,v in shapes.items():
+        if v.members!='':
+            #make the members into a dictionary and life v.members['shape']
+            print(f'{k=}\t{v.members=}')
     for o in iam_enums[1]:
         op = toD(iam_enums[0]["operations"][o.name])
         op["uuid"] = str(uu())
         oq = APIOp(**{k: v for k, v in op.items()})
-        print(dao.dao_insert(oq))
+        #print(dao.dao_insert(oq))
