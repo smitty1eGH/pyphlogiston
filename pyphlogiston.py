@@ -3,8 +3,8 @@ import time
 
 import click
 
+
 @click.command()
-def main(help='Main'):
-    """Main interface
-    """
-    click.echo('hello world')
+def main(help="Main"):
+    """Main interface"""
+    click.echo("hello world")
