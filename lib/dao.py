@@ -3,7 +3,7 @@ import sqlite3
 from uuid import uuid4 as uu
 
 
-class DAO:
+class DAO():
     """Data Access Object for SQLite database that's an adjacency
       list for a set of category tables generated based
       upon the enumeration provided to __init__
