@@ -179,7 +179,6 @@ def test_DAO_3(iam_enums):
                 case 'map':
                     do_uuid(op[ "key"    ]["shape"])
                     do_uuid(op[ "value"  ]["shape"])
-                    print(f'{all_your_uuids[""]}')
 
                 case 'structure':
                     do_uuid(o.name)
@@ -209,8 +208,18 @@ def test_DAO_3(iam_enums):
                     do_uuid(o.name)
 
 
-    #for k,v in all_your_shapes.items():
-    #    print(f'{k}\n\t{v.mems}')
+    for k,v in all_your_shapes.items():
+        print(f'{dao.dao_insert(v)}')
+        for l in v.mems().split(','):
+            if l!='':
+                use_l=l
+                if l in all_your_uuids:
+                    use_l=all_your_uuids[l]
+
+                try:
+                    print(f'{dao.dao_ins_how([v],all_your_uuids[use_l])}')
+                except KeyError as e:
+                    print(e)
 
     #print(f'{all_your_uuids=}')
     #print(len(all_your_uuids.keys()))

@@ -12,6 +12,8 @@ class DAO():
       - `type` fields
     Note that there is no UPDATE functionality; the system versions
       data using fossil.
+    The class supports actively inserting data if given a connection via
+      the *_do flavors, or returning statements via *_sql flavors.
     """
 
     DEFAULT = "__default__"
@@ -19,11 +21,6 @@ class DAO():
     VIEWPRF = "V"  #    obviate reserved word collisions
     PARENT = 0
     CHILD = 1
-    FINDME = f"SELECT a.uuid FROM {VIEWPRF}%s AS a  WHERE  a.name='%s'"
-    INSERTER = f"INSERT INTO  {TBLPREF}%s(uuid,data)  VALUES (%s,%s);"
-    INS_HOW = (
-        "INSERT INTO   how(puuid,ptype,cuuid,ctype,data) VALUES ((%s),%s,(%s),%s,%s);"
-    )
     JSONTEMP = """json('{"name":"%s","type":%s,"payload":"%s"}')"""
 
     def __init__(self, categories, db_path=":memory:"):
@@ -79,13 +76,40 @@ class DAO():
     def conn(self):
         return self._conn
 
-    def dao_select(self, category, name):
-        return DAO.FINDME % (category.name, name)
+    def _select(self,s_or_q=True):
+        if s_or_q:
+            FINDME='%s'
+        else:
+            FINDME='?'
+        return f"SELECT a.uuid FROM {VIEWPRF}%s AS a WHERE a.name={FINDME};"
 
-    def dao_insert(self, data):
+    def select_sql(self, category, name):
+        sql=self._select()
+        return sql % (category.name, name)
+
+    def select_do(self, conn, category, name):
+        sql0=self._select(False)
+        sql1=sql0 % category.name
+        return conn.execute(sql1, name)
+
+    INSERTER = f"INSERT INTO {TBLPREF}%s(uuid,data)  VALUES ('%s','%s');"
+    INS_HOW  = ("INSERT INTO how(puuid,ptype,cuuid,ctype,data) VALUES ((%s),%s,(%s),%s,%s);")
+    def insert_sql(self, data):
         return DAO.INSERTER % (data.apitype, data.uuid, data.to_json())
 
-    def dao_ins_how(self, parent, child, data=None):
+    def insert_do(self, conn, data):
+        return DAO.INSERTER % (data.apitype, data.uuid, data.to_json())
+
+    def ins_how_sql(self, parent, child, data=None):
+        return DAO.INS_HOW & (
+            parent.puuid,
+            parent.ptype.value,
+            child.cuuid,
+            child.ctype.value,
+            data,
+        )
+
+    def ins_how_do(self, conn, parent, child, data=None):
         return DAO.INS_HOW & (
             parent.puuid,
             parent.ptype.value,
