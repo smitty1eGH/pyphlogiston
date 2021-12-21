@@ -209,7 +209,7 @@ def test_DAO_3(iam_enums):
 
 
     for k,v in all_your_shapes.items():
-        print(f'{dao.dao_insert(v)}')
+        print(f'{dao.insert(v)}')
         for l in v.mems().split(','):
             if l!='':
                 use_l=l
@@ -217,7 +217,7 @@ def test_DAO_3(iam_enums):
                     use_l=all_your_uuids[l]
 
                 try:
-                    print(f'{dao.dao_ins_how([v],all_your_uuids[use_l])}')
+                    print(f'{dao.ins_how([v],all_your_uuids[use_l])}')
                 except KeyError as e:
                     print(e)
 

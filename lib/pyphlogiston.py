@@ -3,11 +3,12 @@ from pathlib import Path
 from shutil import copy2 as copy
 from subprocess import run
 
+from dao import DAO
 
 class RAO:
     """The Repository Access Object"""
 
-    def __init__(self, config):
+    def __init__(self, config, categories):
         """
         PROJ_PATH is the root of the client project
         FOSSIL    is the path the the fossil executable
@@ -26,6 +27,7 @@ class RAO:
         """
         # TMP_PATH would be the install directory
         # 1, 2, 3:
+        self.dao = DAO(categories)
         b = Path(str(proj_path) + "data")
         b.mkdir()
         for d in ["/stage", "/repo"]:

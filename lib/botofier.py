@@ -2,6 +2,8 @@ from collections import OrderedDict
 
 # from botofier import toD, toJ
 
+# Utilities supporting unit tests pertaining to botocore test cases
+
 def toD(od):
     """Transform a botocore OrderedDict as a regular dict."""
     def _mems(od):
