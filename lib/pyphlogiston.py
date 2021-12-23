@@ -6,7 +6,10 @@ from subprocess import run
 from dao import DAO
 
 class RAO:
-    """The Repository Access Object"""
+    """The Repository Access Object
+
+    This is the interface for CRUD operations against the repo.
+    """
 
     def __init__(self, config, categories):
         """
@@ -27,12 +30,12 @@ class RAO:
         """
         # TMP_PATH would be the install directory
         # 1, 2, 3:
-        self.dao = DAO(categories)
         b = Path(str(proj_path) + "data")
         b.mkdir()
         for d in ["/stage", "/repo"]:
             c = Path(str(b) + d)
             c.mkdir()
+        self._dao = DAO(categories)
 
         # 4.
         r = Path(f"{str(proj_path)}data/repo")
