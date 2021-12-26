@@ -96,6 +96,17 @@ class DAO():
     def conn(self):
         return self._conn
 
+    def summary(self):
+        SQL0=["SELECT 'how',COUNT(*) FROM how"]
+        SQL1=f"SELECT '%s', COUNT(*) FROM {self.TBLPREF}%s"
+        for x in self.tables:
+            SQL0.append(SQL1 % (x,x))
+        SQL2=" UNION ".join(SQL0)
+        cur = self._conn.cursor()
+        res = cur.execute(SQL2)
+        for r in res:
+            print(r)
+
     def select(self, category, name, dry_run=False):
         if dry_run:
             FINDME = '%s'
@@ -119,11 +130,20 @@ class DAO():
             return self._conn.execute(sql1, (data.uuid, data.to_json()))
 
     def ins_how(self, parent, child, data=None, dry_run=False):
+        use_data=data
+        if data==None:
+            use_data=''
+        argtuple = (parent.uuid,parent.apitype, child.uuid, child.apitype, use_data)
         if dry_run:
-            INS_HOW="(%s),%s,(%s),%s,%s"
-            sql = "INSERT INTO how(puuid,ptype,cuuid,ctype,data) VALUES ({INS_HOW});"
-            return sql & (parent.puuid, parent.ptype.value, child.cuuid, child.ctype.value, data)
+            INS_HOW="%s,%s,%s,%s,%s"
+            sql = f"INSERT INTO how(puuid,ptype,cuuid,ctype,data) VALUES ({INS_HOW});"
+            return sql % argtuple
         else:
             INS_HOW="?,?,?,?,?"
-            sql = "INSERT INTO how(puuid,ptype,cuuid,ctype,data) VALUES ({INS_HOW});"
-            return self._conn.execute(sql,(parent.puuid, parent.ptype.value, child.cuuid, child.ctype.value, data))
+            sql = f"INSERT INTO how(puuid,ptype,cuuid,ctype,data) VALUES ({INS_HOW});"
+            try:
+                if parent.name=='UpdateUserRequest':
+                    print(f'{parent=}\n{child=}')
+                return self._conn.execute(sql,argtuple)
+            except AttributeError as e:
+                pass

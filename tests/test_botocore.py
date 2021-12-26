@@ -193,9 +193,11 @@ def test_DAO_3(iam_enums):
                         do_uuid( m )
                         n["name"] = m
                         n["uuid"] = all_your_uuids[m]
-                        deps.append(all_your_uuids[m])
+                        deps.append(m)
                         all_your_shapes[m]=APIShape(*n)
                     all_your_shapes[name].members=','.join(deps)
+                    if name=='UpdateUserRequest':
+                        print(f'{name=}\t{all_your_shapes[name].members=}')
 
                 case 'list':
                     do_uuid(op[ "member" ]["shape"])
@@ -209,19 +211,23 @@ def test_DAO_3(iam_enums):
 
 
     for k,v in all_your_shapes.items():
-        print(f'{dao.insert(v)}')
+        r = dao.insert(v)
+        if v.name=='UpdateUserRequest':
+            print(f'{v.name=}\t{v.mems()}')
         for l in v.mems().split(','):
-            if l!='':
-                use_l=l
-                if l in all_your_uuids:
-                    use_l=all_your_uuids[l]
+            if l in all_your_shapes:
+                use_l = all_your_shapes[l]
+                if isinstance(use_l,APIShape):
+                    try:
+                        if v.uuid != use_l.uuid and use_l.uuid != 'shape':
+                            r = dao.ins_how(v,use_l) #,dry_run=True)
+                    except KeyError as e:
+                        print(f'{v=}\t{use_l=}')
+                else:
+                    print(f'skip {l=}')
 
-                try:
-                    print(f'{dao.ins_how([v],all_your_uuids[use_l])}')
-                except KeyError as e:
-                    print(e)
 
-    #print(f'{all_your_uuids=}')
+    r = dao.summary()
     #print(len(all_your_uuids.keys()))
 
     #for o in iam_enums[1]:
