@@ -4,10 +4,13 @@ from collections import OrderedDict
 
 # Utilities supporting unit tests pertaining to botocore test cases
 
+
 def toD(od):
     """Transform a botocore OrderedDict as a regular dict."""
+
     def _mems(od):
         return od
+
     out = {}
     try:
         for k, v in od.items():
@@ -26,7 +29,7 @@ def toD(od):
             else:
                 out[k] = v
     except AttributeError as e:
-        x = { 'type' : 'str','mems' : None }
+        x = {"type": "str", "mems": None}
         x["mems"] = _mems(od)
         return x
     else:

@@ -6,16 +6,18 @@ from uuid import uuid4 as uu
 
 DEFAULT = "__default__"
 
+
 @dataclass_json
 @dataclass
-class DefVal():
-    '''DefVal(uuid=,apitype=)
-    '''
-    uuid    : str = ''
-    apitype : str = ''
-    name    : str = DEFAULT
+class DefVal:
+    """DefVal(uuid=,apitype=)"""
 
-class DAO():
+    uuid: str = ""
+    apitype: str = ""
+    name: str = DEFAULT
+
+
+class DAO:
     """Data Access Object for SQLite database that's
       - an adjacency list for a set of category tables
       - based upon the enumeration provided to __init__
@@ -28,12 +30,15 @@ class DAO():
       the *_do flavors, or returning statements via *_sql flavors.
     Set dry_run=True to see what select, insert, or ins_how SQL would have
       been executed.
+
+    TODO:
+    - Figure out how this API is exposed as an RAO component.
     """
 
     TBLPREF = "T"  # Prefix database object names to
     VIEWPRF = "V"  #    obviate reserved word collisions
-    PARENT  =  0
-    CHILD   =  1
+    PARENT = 0
+    CHILD = 1
 
     def __init__(self, categories, db_path=":memory:"):
         """Initialize a list of tables with the names of the categories
@@ -41,10 +46,10 @@ class DAO():
         Instantiate db, load default data
         """
         self.categories = categories
-        self.cache      = {}
-        self.tables     = [x for x in categories.__members__]
-        self.db_path    = db_path
-        self._conn      = sqlite3.connect(self.db_path)
+        self.cache = {}
+        self.tables = [x for x in categories.__members__]
+        self.db_path = db_path
+        self._conn = sqlite3.connect(self.db_path)
 
         """Build the T{base} and how DDL for SQLite
            Add on views that pull name/type fields out of data
@@ -53,18 +58,34 @@ class DAO():
             f"CREATE TABLE {self.TBLPREF}{t}(uuid TEXT,data TEXT);" for t in self.tables
         ]
         self.schema.append(
-            "CREATE TABLE how(puuid TEXT,ptype INTEGER,cuuid TEXT,ctype INTEGER,data TEXT);"
+            """CREATE TABLE how(puuid TEXT   , ptype INTEGER, cuuid TEXT
+                               ,ctype INTEGER, data  TEXT);"""
         )
         for t in self.tables:
             self.schema.append(
-                f"CREATE VIEW {self.VIEWPRF}{t} AS SELECT uuid,json_extract(data,'$.name') AS name, json_extract(data,'$.type') AS type, data FROM {self.TBLPREF}{t};"
+                f"""CREATE VIEW {self.VIEWPRF}{t} AS
+                    SELECT uuid
+                         , json_extract(data,'$.name') AS name
+                         , json_extract(data,'$.type') AS type
+                         , data
+                    FROM  {self.TBLPREF}{t};
+                 """
             )
-        #print(self.schema)
-        #[ 'CREATE TABLE TIAMShape(uuid  TEXT,data  TEXT);'
-        #, 'CREATE TABLE TIAMOp(   uuid  TEXT,data  TEXT);'
-        #, 'CREATE TABLE how(      puuid TEXT,ptype INTEGER,cuuid TEXT,ctype INTEGER,data TEXT);'
-        #, "CREATE VIEW VIAMShape AS SELECT uuid,json_extract(data,'$.name') AS name, json_extract(data,'$.type') AS type, data FROM TIAMShape;"
-        #, "CREATE VIEW VIAMOp    AS SELECT uuid,json_extract(data,'$.name') AS name, json_extract(data,'$.type') AS type, data FROM TIAMOp;   "]
+        # print(self.schema)
+        # [ 'CREATE TABLE TIAMShape(uuid  TEXT,data  TEXT);'
+        # , 'CREATE TABLE TIAMOp(   uuid  TEXT,data  TEXT);'
+        # , 'CREATE TABLE how(      puuid TEXT,ptype INTEGER,cuuid TEXT
+        #                          ,ctype INTEGER,data TEXT);'
+        # , "CREATE VIEW VIAMShape
+        #             AS SELECT     uuid,json_extract(data,'$.name') AS name
+        #                         , json_extract(data,'$.type')      AS type
+        #                         , data
+        #                FROM       TIAMShape;"
+        # , "CREATE VIEW VIAMOp
+        #             AS SELECT     uuid,json_extract(data,'$.name') AS name
+        #                         , json_extract(data,'$.type')      AS type
+        #                         , data
+        #                FROM       TIAMOp;   "]
         #        cur=c.cursor()
         #        ret=cur.execute('SELECT name FROM sqlite_master;')
         #        for r in ret.fetchall():
@@ -73,7 +94,7 @@ class DAO():
             try:
                 c.executescript("".join(self.schema))
                 c.commit()
-                self.defs  = self._defaults()
+                self.defs = self._defaults()
                 c.executescript("".join(self.defs))
             except Exception as e:
                 print(e)
@@ -81,7 +102,8 @@ class DAO():
                 c.commit()
 
     def _defaults(self):
-        """Populate the following:
+        """Populate the following.
+
         - a list of inserts of default values, and
         - a global default object cache
         """
@@ -89,61 +111,64 @@ class DAO():
         for x in self.tables:
             self.cache[x] = uu()  # default uuid for the table
             self.cache[f"{x}_lru"] = None  # last recently used
-            out.append(self.insert(DefVal(uuid=self.cache[x],apitype=x)))
+            out.append(self.insert(DefVal(uuid=self.cache[x], apitype=x)))
         return out
 
     @property
     def conn(self):
+        """Return database connection."""
         return self._conn
 
     def summary(self):
-        SQL0=["SELECT 'how',COUNT(*) FROM how"]
-        SQL1=f"SELECT '%s', COUNT(*) FROM {self.TBLPREF}%s"
+        """Summary report."""
+        SQL0 = ["SELECT 'how',COUNT(*) FROM how"]
+        SQL1 = f"SELECT '%s', COUNT(*) FROM {self.TBLPREF}%s"
         for x in self.tables:
-            SQL0.append(SQL1 % (x,x))
-        SQL2=" UNION ".join(SQL0)
+            SQL0.append(SQL1 % (x, x))
+        SQL2 = " UNION ".join(SQL0)
         cur = self._conn.cursor()
         res = cur.execute(SQL2)
         for r in res:
             print(r)
 
     def select(self, category, name, dry_run=False):
+        """Return data from query."""
         if dry_run:
-            FINDME = '%s'
-            sql0   =f"SELECT a.uuid FROM {DAO.VIEWPRF}%s AS a WHERE a.name={FINDME};"
-            sql1   = sql0 % category.name
+            FINDME = "%s"
+            sql0 = f"SELECT a.uuid FROM {DAO.VIEWPRF}%s AS a WHERE a.name={FINDME};"
+            sql1 = sql0 % category.name
             return self._conn.execute(sql1, name)
         else:
-            FINDME = '?'
-            sql    =f"SELECT a.uuid FROM {DAO.VIEWPRF}%s AS a WHERE a.name={FINDME};"
+            FINDME = "?"
+            sql = f"SELECT a.uuid FROM {DAO.VIEWPRF}%s AS a WHERE a.name={FINDME};"
             return sql % (category.name, name)
 
     def insert(self, data, dry_run=False):
         if dry_run:
-            INSERTER="'%s','%s'"
+            INSERTER = "'%s','%s'"
             sql = f"INSERT INTO {DAO.TBLPREF}%s(uuid,data)  VALUES ({INSERTER});"
             return sql % (data.apitype, data.uuid, data.to_json())
         else:
-            INSERTER="?,?"
+            INSERTER = "?,?"
             sql0 = f"INSERT INTO {DAO.TBLPREF}%s(uuid,data)  VALUES ({INSERTER});"
             sql1 = sql0 % (data.apitype)
             return self._conn.execute(sql1, (data.uuid, data.to_json()))
 
     def ins_how(self, parent, child, data=None, dry_run=False):
-        use_data=data
-        if data==None:
-            use_data=''
-        argtuple = (parent.uuid,parent.apitype, child.uuid, child.apitype, use_data)
+        use_data = data
+        if data == None:
+            use_data = ""
+        argtuple = (parent.uuid, parent.apitype, child.uuid, child.apitype, use_data)
         if dry_run:
-            INS_HOW="%s,%s,%s,%s,%s"
+            INS_HOW = "%s,%s,%s,%s,%s"
             sql = f"INSERT INTO how(puuid,ptype,cuuid,ctype,data) VALUES ({INS_HOW});"
             return sql % argtuple
         else:
-            INS_HOW="?,?,?,?,?"
+            INS_HOW = "?,?,?,?,?"
             sql = f"INSERT INTO how(puuid,ptype,cuuid,ctype,data) VALUES ({INS_HOW});"
             try:
-                if parent.name=='UpdateUserRequest':
-                    print(f'{parent=}\n{child=}')
-                return self._conn.execute(sql,argtuple)
+                if parent.name == "UpdateUserRequest":
+                    print(f"{parent=}\n{child=}")
+                return self._conn.execute(sql, argtuple)
             except AttributeError as e:
                 pass

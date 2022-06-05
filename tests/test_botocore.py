@@ -44,12 +44,13 @@ class APIShape:
     apitype: APIType = APIType.IAMShape.name
 
     def mems(self):
-        out=[]
-        if self.member != '':
-            out.append(self.member['shape'])
-        if self.members !='':
+        out = []
+        if self.member != "":
+            out.append(self.member["shape"])
+        if self.members != "":
             out.append(self.members)
-        return ','.join(out)
+        return ",".join(out)
+
 
 @dataclass_json
 @dataclass
@@ -62,6 +63,7 @@ class APIOp:
     errors: str = ""
     documentation: str = ""
     apitype: APIType = APIType.IAMOp.name
+
 
 @pytest.fixture
 def iam_service():
@@ -85,13 +87,13 @@ def iam_enums(iam_file):
 
 @pytest.mark.skip
 def test_loader(iam_file):
-    '''RETURNS:
-       version
-       metadata
-       operations
-       shapes
-       documentation
-    '''
+    """RETURNS:
+    version
+    metadata
+    operations
+    shapes
+    documentation
+    """
     for k in iam_file.keys():
         print(k)
 
@@ -123,8 +125,7 @@ def test_DAO_0():
 
 @pytest.mark.skip
 def test_DAO_1(iam_enums):
-    """Do the Ops
-    """
+    """Do the Ops"""
     dao = DAO(APIType)
     for o in iam_enums[1]:
         op = toD(iam_enums[0]["operations"][o.name])
@@ -159,79 +160,77 @@ def test_DAO_3(iam_enums):
     {'type', 'error', 'documentation', 'member', 'key'
     , 'min', 'value', 'members', 'max', 'exception'}
     """
-    all_your_ops    = {}
+    all_your_ops = {}
     all_your_shapes = {}
-    all_your_uuids  = {} # Generate UUIDs for any names
-                         #   encountered, irrespective of whether
-                         #   they have yet been encountered in the data.
+    all_your_uuids = {}  # Generate UUIDs for any names
+    #   encountered, irrespective of whether
+    #   they have yet been encountered in the data.
     def do_uuid(name):
         if name not in all_your_uuids:
             all_your_uuids[name] = str(uu())
 
-    dao   = DAO(APIType)
-    types = {"map","list","structure"}
+    dao = DAO(APIType)
+    types = {"map", "list", "structure"}
     for o in iam_enums[2]:
         sh = iam_enums[0]["shapes"][o.name]
         if sh["type"] in types:
             op = toD(sh)
-            match op['type']:
+            match op["type"]:
 
-                case 'map':
-                    do_uuid(op[ "key"    ]["shape"])
-                    do_uuid(op[ "value"  ]["shape"])
+                case "map":
+                    do_uuid(op["key"]["shape"])
+                    do_uuid(op["value"]["shape"])
 
-                case 'structure':
+                case "structure":
                     do_uuid(o.name)
                     name = o.name
                     op["name"] = name
                     op["uuid"] = all_your_uuids[name]
-                    all_your_shapes[name]=APIShape(**{k: v for k, v in op.items()})
+                    all_your_shapes[name] = APIShape(**{k: v for k, v in op.items()})
 
-                    deps=[]
+                    deps = []
                     for m in op["members"]:
-                        n =op["members"][m]
-                        do_uuid( m )
+                        n = op["members"][m]
+                        do_uuid(m)
                         n["name"] = m
                         n["uuid"] = all_your_uuids[m]
                         deps.append(m)
-                        all_your_shapes[m]=APIShape(*n)
-                    all_your_shapes[name].members=','.join(deps)
-                    if name=='UpdateUserRequest':
-                        print(f'{name=}\t{all_your_shapes[name].members=}')
+                        all_your_shapes[m] = APIShape(*n)
+                    all_your_shapes[name].members = ",".join(deps)
+                    if name == "UpdateUserRequest":
+                        print(f"{name=}\t{all_your_shapes[name].members=}")
 
-                case 'list':
-                    do_uuid(op[ "member" ]["shape"])
-                    name = op[  "member" ]["shape"]
+                case "list":
+                    do_uuid(op["member"]["shape"])
+                    name = op["member"]["shape"]
                     op["name"] = name
                     op["uuid"] = all_your_uuids[name]
-                    all_your_shapes[name]=APIShape(**{k: v for k, v in op.items()})
+                    all_your_shapes[name] = APIShape(**{k: v for k, v in op.items()})
 
-                case 'str':
+                case "str":
                     do_uuid(o.name)
 
-
-    for k,v in all_your_shapes.items():
+    for k, v in all_your_shapes.items():
         r = dao.insert(v)
-        if v.name=='UpdateUserRequest':
-            print(f'{v.name=}\t{v.mems()}')
-        for l in v.mems().split(','):
+        if v.name == "UpdateUserRequest":
+            print(f"{v.name=}\t{v.mems()}")
+        for l in v.mems().split(","):
             if l in all_your_shapes:
                 use_l = all_your_shapes[l]
-                if isinstance(use_l,APIShape):
+                if isinstance(use_l, APIShape):
                     try:
-                        if v.uuid != use_l.uuid and use_l.uuid != 'shape':
-                            r = dao.ins_how(v,use_l) #,dry_run=True)
+                        if v.uuid != use_l.uuid and use_l.uuid != "shape":
+                            r = dao.ins_how(v, use_l)  # ,dry_run=True)
                     except KeyError as e:
-                        print(f'{v=}\t{use_l=}')
+                        print(f"{v=}\t{use_l=}")
                 else:
-                    print(f'skip {l=}')
-
+                    print(f"skip {l=}")
 
     r = dao.summary()
-    #print(len(all_your_uuids.keys()))
+    # print(len(all_your_uuids.keys()))
 
-    #for o in iam_enums[1]:
+    # for o in iam_enums[1]:
     #    op = toD(iam_enums[0]["operations"][o.name])
     #    op["uuid"] = str(uu())
     #    all_your_ops[o.name] = APIOp(**{k: v for k, v in op.items()})
-        #print(dao.dao_insert(oq))
+    # print(dao.dao_insert(oq))
