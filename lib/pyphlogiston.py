@@ -5,6 +5,7 @@ from subprocess import run
 
 from dao import DAO
 
+
 def write_object(config, rao, the_object):
     """Write an object to pyphlogiston.
 
@@ -12,17 +13,20 @@ def write_object(config, rao, the_object):
     2. write it to config.proj_path/data/stage
     3. invoke rao.add_and_commit()
     """
-    with open(f'config.proj_path/data/stage/{the_object.uuid}', 'w') as f:
+    with open(f"config.proj_path/data/stage/{the_object.uuid}", "w") as f:
         f.write(the_object)
     rao.add_and_commit()
 
+
 @dataclass
-class RAOConfig():
+class RAOConfig:
     """RAO configuration items to set."""
+
     fossil: str  # path to fossil binary
     proj_path: str  # top of
 
-class RAO():
+
+class RAO:
     """The Repository Access Object.
 
     This is the interface for CRUD operations against the repo.
