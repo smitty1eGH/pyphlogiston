@@ -84,9 +84,6 @@ class DAO:
         with self._conn as c:
             try:
                 c.executescript("".join(self.schema))
-                c.commit()
-                self.defs = self._defaults()
-                c.executescript("".join(self.defs))
             except Exception as e:
                 print(e)
             finally:
