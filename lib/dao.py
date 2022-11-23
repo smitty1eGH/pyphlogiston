@@ -12,9 +12,9 @@ DEFAULT = "__default__"
 class DefVal:
     """DefVal(uuid=,apitype=)"""
 
-    uuid: str = ""
-    apitype: str = ""
-    name: str = DEFAULT
+    uuid    : str = ""
+    apitype : str = ""
+    name    : str = DEFAULT
 
 
 class DAO:
@@ -37,30 +37,38 @@ class DAO:
 
     TBLPREF = "T"  # Prefix database object names to
     VIEWPRF = "V"  #    obviate reserved word collisions
-    PARENT = 0
-    CHILD = 1
+    PARENT  =  0
+    CHILD   =  1
 
     def __init__(self, categories, db_path=":memory:"):
         """Initialize a list of tables with the names of the categories
-          that retained in the SQLite adjacency list.
-        Instantiate db, load default data
+             that retained in the SQLite adjacency list.
+           Instantiate db, load default data
         """
-        self.categories = categories
-        self.cache = {}
-        self.tables = [x for x in categories.__members__]
-        self.db_path = db_path
-        self._conn = sqlite3.connect(self.db_path)
+        def gen_defaults(self):
+            """Populate the following.
 
-        """Build the T{base} and how DDL for SQLite
+            - a list of inserts of default values, and
+            - a global default object cache
+            """
+            for x in self.tables:
+                self.cache[x] = uu()  # default uuid for the table
+                self.cache[f"{x}_lru"] = None  # last recently used
+                yield self.insert(DefVal(uuid=self.cache[x], apitype=x), dry_run=True)
+
+        self.categories = categories
+        self.cache      = {}
+        self.tables     = [x for x in categories.__members__]
+        self.db_path    = db_path
+        self._conn      = sqlite3.connect(self.db_path)
+
+        """Build the T{base} and 'how' DDL for SQLite
            Add on views that pull name/type fields out of data
         """
-        self.schema = [
-            f"CREATE TABLE {self.TBLPREF}{t}(uuid TEXT,data TEXT);" for t in self.tables
-        ]
+        self.schema = [f"""CREATE TABLE {self.TBLPREF}{t}(uuid TEXT,data TEXT);""" for t in self.tables]
         self.schema.append(
             """CREATE TABLE how(puuid TEXT   , ptype INTEGER, cuuid TEXT
-                               ,ctype INTEGER, data  TEXT);"""
-        )
+                               ,ctype INTEGER, data  TEXT);""")
         for t in self.tables:
             self.schema.append(
                 f"""CREATE VIEW {self.VIEWPRF}{t} AS
@@ -69,27 +77,10 @@ class DAO:
                          , json_extract(data,'$.type') AS type
                          , data
                     FROM  {self.TBLPREF}{t};
-                 """
-            )
-        # print(self.schema)
-        # [ 'CREATE TABLE TIAMShape(uuid  TEXT,data  TEXT);'
-        # , 'CREATE TABLE TIAMOp(   uuid  TEXT,data  TEXT);'
-        # , 'CREATE TABLE how(      puuid TEXT,ptype INTEGER,cuuid TEXT
-        #                          ,ctype INTEGER,data TEXT);'
-        # , "CREATE VIEW VIAMShape
-        #             AS SELECT     uuid,json_extract(data,'$.name') AS name
-        #                         , json_extract(data,'$.type')      AS type
-        #                         , data
-        #                FROM       TIAMShape;"
-        # , "CREATE VIEW VIAMOp
-        #             AS SELECT     uuid,json_extract(data,'$.name') AS name
-        #                         , json_extract(data,'$.type')      AS type
-        #                         , data
-        #                FROM       TIAMOp;   "]
-        #        cur=c.cursor()
-        #        ret=cur.execute('SELECT name FROM sqlite_master;')
-        #        for r in ret.fetchall():
-        #            print(r)
+                 """)
+        for q in gen_defaults(self):
+            self.schema.append(q)
+
         with self._conn as c:
             try:
                 c.executescript("".join(self.schema))
@@ -101,18 +92,6 @@ class DAO:
             finally:
                 c.commit()
 
-    def _defaults(self):
-        """Populate the following.
-
-        - a list of inserts of default values, and
-        - a global default object cache
-        """
-        out = []
-        for x in self.tables:
-            self.cache[x] = uu()  # default uuid for the table
-            self.cache[f"{x}_lru"] = None  # last recently used
-            out.append(self.insert(DefVal(uuid=self.cache[x], apitype=x)))
-        return out
 
     @property
     def conn(self):
@@ -126,8 +105,8 @@ class DAO:
         for x in self.tables:
             SQL0.append(SQL1 % (x, x))
         SQL2 = " UNION ".join(SQL0)
-        cur = self._conn.cursor()
-        res = cur.execute(SQL2)
+        cur  = self._conn.cursor()
+        res  = cur.execute(SQL2)
         for r in res:
             print(r)
 
@@ -135,23 +114,23 @@ class DAO:
         """Return data from query."""
         if dry_run:
             FINDME = "%s"
-            sql0 = f"SELECT a.uuid FROM {DAO.VIEWPRF}%s AS a WHERE a.name={FINDME};"
-            sql1 = sql0 % category.name
+            sql0   = f"SELECT a.uuid FROM {DAO.VIEWPRF}%s AS a WHERE a.name={FINDME};"
+            sql1   = sql0 % category.name
             return self._conn.execute(sql1, name)
         else:
             FINDME = "?"
-            sql = f"SELECT a.uuid FROM {DAO.VIEWPRF}%s AS a WHERE a.name={FINDME};"
+            sql    = f"SELECT a.uuid FROM {DAO.VIEWPRF}%s AS a WHERE a.name={FINDME};"
             return sql % (category.name, name)
 
     def insert(self, data, dry_run=False):
         if dry_run:
             INSERTER = "'%s','%s'"
-            sql = f"INSERT INTO {DAO.TBLPREF}%s(uuid,data)  VALUES ({INSERTER});"
+            sql      = f"INSERT INTO {DAO.TBLPREF}%s(uuid,data)  VALUES ({INSERTER});"
             return sql % (data.apitype, data.uuid, data.to_json())
         else:
             INSERTER = "?,?"
-            sql0 = f"INSERT INTO {DAO.TBLPREF}%s(uuid,data)  VALUES ({INSERTER});"
-            sql1 = sql0 % (data.apitype)
+            sql0     = f"INSERT INTO {DAO.TBLPREF}%s(uuid,data)  VALUES ({INSERTER});"
+            sql1     = sql0 % (data.apitype)
             return self._conn.execute(sql1, (data.uuid, data.to_json()))
 
     def ins_how(self, parent, child, data=None, dry_run=False):

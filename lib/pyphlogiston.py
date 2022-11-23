@@ -23,7 +23,7 @@ class RAOConfig:
     """RAO configuration items to set."""
 
     fossil: str  # path to fossil binary
-    proj_path: str  # top of
+    proj_path: str  # top of the storage tree
 
 
 class RAO:
@@ -41,7 +41,7 @@ class RAO:
       easily snapshotted
     """
 
-    def __init__(self, config, categories):
+    def __init__(self, config, categories=None):
         """Configure the structure.
 
         PROJ_PATH is the root of the client project
@@ -63,35 +63,26 @@ class RAO:
 
         # TMP_PATH would be the install directory
         # 1, 2, 3:
-        b = Path(str(self.config.proj_path) + "data")
-        b.mkdir()
-        for d in ["/stage", "/repo"]:
-            c = Path(str(b) + d)
-            c.mkdir()
-        self._dao = DAO(categories)
+        self.base = Path(f"{str(self.config.proj_path)}/data")
+        self.base.mkdir()
+        self.stage = Path(f"{str(self.base)}/stage")
+        self.stage.mkdir()
+        self.repo = Path(f"{str(self.base)}/repo")
+        self.repo.mkdir()
 
         # 4.
-        r = Path(f"{str(self.config.proj_path)}data/repo")
-        chdir(str(r))
-        init = [self.config.fossil, "init", "phologiston.fossil"]
-        out = run(init, capture_output=True)
-        assert out.returncode == 0
+        chdir(str(self.repo))
+        out = self._run_command(self, ["init", "phologiston.fossil"])
 
         # 5.
-        s = Path(f"{str(self.config.proj_path)}data/stage")
-        co = [
-            self.config.fossil,
-            "open",
-            f"{str(r)}/phologiston.fossil",
-            "--workdir",
-            str(s),
-        ]
-        out = run(co, capture_output=True)
-        assert out.returncode == 0
+        out = self._run_command(self, ["open", f"{str(self.repo)}/phologiston.fossil", "--workdir", str(self.stage)])
+        if categories:
+            self.DAO = DAO(categories,f'{self.base}/pyphlogiston.sqlite')
+
+
 
     def _run_command(self, args):
         """Wrap commands to run against the fossil repo."""
-        print([self.config.fossil] + args)
         out = run([self.config.fossil] + args, capture_output=True)
         try:
             assert out.returncode == 0
@@ -118,7 +109,7 @@ class RAO:
             message,
             f"{self.config.proj_path}",
         ]
-        return self._run_command(self.config.fossil, args)
+        return self._run_command(args)
 
     def add_and_commit(self, tag, message):
         """Temporarily shift to proj_path to do the add.
@@ -128,8 +119,10 @@ class RAO:
         old = getcwd()
         chdir(self.config.proj_path)
         out0 = self.add_files(self.config.proj_path, self.config.fossil, [])
+        assert out0 == 0
         out1 = self.commit_files(
             self.config.proj_path, self.config.fossil, tag, message
         )
+        assert out1 == 0
         chdir(old)
         return out0, out1
