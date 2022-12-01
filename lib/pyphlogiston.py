@@ -1,20 +1,32 @@
 from dataclasses import dataclass
+import json
 from os import chdir, getcwd
 from pathlib import Path
 from subprocess import run
 
 from dao import DAO
 
+#Usage:
+#  1. Instantiate the config
+#  2. Instantiate the RAO
+#  3. Invoke write_object() to populate
+
+
 
 def write_object(config, rao, the_object):
     """Write an object to pyphlogiston.
 
-    1. the_object is a JSON file that knows its UUID
+    1. the_object is a JSON document that knows:
+    - its UUID
+    - its apitype
+    - its name
+    - other properties as desired
     2. write it to config.proj_path/data/stage
     3. invoke rao.add_and_commit()
     """
-    with open(f"config.proj_path/data/stage/{the_object.uuid}", "w") as f:
-        f.write(the_object)
+
+    with open(f"{config.proj_path}/data/stage/{the_object.uuid}", "w") as f:
+        f.write(json.dumps(the_object))
     rao.add_and_commit()
 
 
@@ -76,9 +88,10 @@ class RAO:
 
         # 5.
         out = self._run_command(self, ["open", f"{str(self.repo)}/phologiston.fossil", "--workdir", str(self.stage)])
+
+        # 6.
         if categories:
             self.DAO = DAO(categories,f'{self.base}/pyphlogiston.sqlite')
-
 
 
     def _run_command(self, args):

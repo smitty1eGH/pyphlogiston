@@ -10,7 +10,9 @@ DEFAULT = "__default__"
 @dataclass_json
 @dataclass
 class DefVal:
-    """DefVal(uuid=,apitype=)"""
+    """DefVal(uuid=,apitype=)
+    Every category has a default value automatically generated.
+    """
 
     uuid    : str = ""
     apitype : str = ""
@@ -30,9 +32,6 @@ class DAO:
       the *_do flavors, or returning statements via *_sql flavors.
     Set dry_run=True to see what select, insert, or ins_how SQL would have
       been executed.
-
-    TODO:
-    - Figure out how this API is exposed as an RAO component.
     """
 
     TBLPREF = "T"  # Prefix database object names to
@@ -73,8 +72,8 @@ class DAO:
             self.schema.append(
                 f"""CREATE VIEW {self.VIEWPRF}{t} AS
                     SELECT uuid
-                         , json_extract(data,'$.name') AS name
-                         , json_extract(data,'$.type') AS type
+                         , json_extract(data,'$.name'   ) AS name
+                         , json_extract(data,'$.apitype') AS apitype
                          , data
                     FROM  {self.TBLPREF}{t};
                  """)
