@@ -6,29 +6,21 @@ from subprocess import run
 
 from dao import DAO
 
+# The idea is that the Repository Access Object
+#   wraps a SQLite file and associated Fossil
+#   repository.
+# Client code will instantiate the RAO and use the CRUD
+#   methods provided, and get versioning for free.
+# All data are immutable in the system.
+#   UPDATEs do not really happen; the latest version with
+#   a given UUID is the 'update'. DELETEs do not really
+#   happen, either. Content set to __DELETED__ for a UUID
+#   will be ignored. So, really, it's all CREATE and SELECT
+
 #Usage:
 #  1. Instantiate the config
 #  2. Instantiate the RAO
-#  3. Invoke write_object() to populate
-
-
-
-def write_object(config, rao, the_object):
-    """Write an object to pyphlogiston.
-
-    1. the_object is a JSON document that knows:
-    - its UUID
-    - its apitype
-    - its name
-    - other properties as desired
-    2. write it to config.proj_path/data/stage
-    3. invoke rao.add_and_commit()
-    """
-
-    with open(f"{config.proj_path}/data/stage/{the_object.uuid}", "w") as f:
-        f.write(json.dumps(the_object))
-    rao.add_and_commit()
-
+#  3. Invoke the DAO functions that are boosted by the RAO
 
 @dataclass
 class RAOConfig:
@@ -36,6 +28,8 @@ class RAOConfig:
 
     fossil: str  # path to fossil binary
     proj_path: str  # top of the storage tree
+    fossil_repo_name: str # fossil repository name
+    sqlite_file: str # name of sqlite file
 
 
 class RAO:
@@ -84,14 +78,28 @@ class RAO:
 
         # 4.
         chdir(str(self.repo))
-        out = self._run_command(self, ["init", "phologiston.fossil"])
+        out = self._run_command(self, ["init", self.config.fossil_repo_name])
 
         # 5.
-        out = self._run_command(self, ["open", f"{str(self.repo)}/phologiston.fossil", "--workdir", str(self.stage)])
+        out = self._run_command(self, ["open", f"{str(self.repo)}/{self.config.fossil_repo_name}", "--workdir", str(self.stage)])
 
         # 6.
         if categories:
-            self.DAO = DAO(categories,f'{self.base}/pyphlogiston.sqlite')
+            self._DAO = DAO(categories,f'{self.base}/{self.config.sqlite_file}')
+
+
+    def create_object(self, the_object):
+        """Write an object to pyphlogiston.
+
+        the_object is a JSON document that knows:
+        - its UUID
+        - its apitype
+        - its name
+        - other properties as desired
+        """
+        with open(f"{self.config.proj_path}/data/stage/{the_object.uuid}", "w") as f:
+            f.write(json.dumps(the_object))
+        self.add_and_commit()
 
 
     def _run_command(self, args):
