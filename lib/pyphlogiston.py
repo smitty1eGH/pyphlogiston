@@ -4,7 +4,7 @@ from os import chdir, getcwd
 from pathlib import Path
 from subprocess import run
 
-from dao import DAO
+from .dao import DAO
 
 # The idea is that the Repository Access Object
 #   wraps a SQLite file and associated Fossil
@@ -17,10 +17,11 @@ from dao import DAO
 #   happen, either. Content set to __DELETED__ for a UUID
 #   will be ignored. So, really, it's all CREATE and SELECT
 
-#Usage:
+# Usage:
 #  1. Instantiate the config
 #  2. Instantiate the RAO
 #  3. Invoke the DAO functions that are boosted by the RAO
+
 
 @dataclass
 class RAOConfig:
@@ -28,8 +29,8 @@ class RAOConfig:
 
     fossil: str  # path to fossil binary
     proj_path: str  # top of the storage tree
-    fossil_repo_name: str # fossil repository name
-    sqlite_file: str # name of sqlite file
+    fossil_repo_name: str  # fossil repository name
+    sqlite_file: str  # name of sqlite file
 
 
 class RAO:
@@ -81,12 +82,19 @@ class RAO:
         out = self._run_command(self, ["init", self.config.fossil_repo_name])
 
         # 5.
-        out = self._run_command(self, ["open", f"{str(self.repo)}/{self.config.fossil_repo_name}", "--workdir", str(self.stage)])
+        out = self._run_command(
+            self,
+            [
+                "open",
+                f"{str(self.repo)}/{self.config.fossil_repo_name}",
+                "--workdir",
+                str(self.stage),
+            ],
+        )
 
         # 6.
         if categories:
-            self._DAO = DAO(categories,f'{self.base}/{self.config.sqlite_file}')
-
+            self._DAO = DAO(categories, f"{self.base}/{self.config.sqlite_file}")
 
     def create_object(self, the_object):
         """Write an object to pyphlogiston.
@@ -100,7 +108,6 @@ class RAO:
         with open(f"{self.config.proj_path}/data/stage/{the_object.uuid}", "w") as f:
             f.write(json.dumps(the_object))
         self.add_and_commit()
-
 
     def _run_command(self, args):
         """Wrap commands to run against the fossil repo."""
