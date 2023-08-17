@@ -20,8 +20,8 @@ class DefVal:
 
 
 class DAO:
-    """Data Access Object for SQLite database that's
-      - an adjacency list for a set of category tables
+    """Data Access Object for SQLite database that is:
+      - an adjacency list for a set of category tables,
       - based upon the enumeration provided to __init__
     Category data for those tables are required to have at least
       - `name` and
@@ -41,7 +41,7 @@ class DAO:
 
     def __init__(self, categories, db_path=":memory:"):
         """Initialize a list of tables with the names of the categories
-          that retained in the SQLite adjacency list.
+        that retained in the SQLite adjacency list.
         Instantiate db, load default data
         """
 

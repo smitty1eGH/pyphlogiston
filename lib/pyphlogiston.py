@@ -30,7 +30,7 @@ class RAOConfig:
     fossil: str  # path to fossil binary
     proj_path: str  # top of the storage tree
     fossil_repo_name: str  # fossil repository name
-    sqlite_file: str  # name of sqlite file
+    sqlite_file: str  # name of sqlite file bb
 
 
 class RAO:
@@ -50,51 +50,18 @@ class RAO:
 
     def __init__(self, config, categories=None):
         """Configure the structure.
-
-        PROJ_PATH is the root of the client project
-        FOSSIL    is the path the the fossil executable
-
-        Build:
-        PROJ_PATH/data/pyphlogiston.sqlite      # current state
-                      /stage/                   # files with UUID names
-                      /repo/phlogiston.fossil   # past states
-
-        1. set up           data/
-        2. initialize       data/pyphlogiston.sqlite
-        3. set up           data/stage/
-        4. set up           data/repo
-        5. initialize       data/repo/repo.fossil
-        6. commit stage/ to data/repo/repo.fossil
         """
         self.config = config
-
-        # TMP_PATH would be the install directory
-        # 1, 2, 3:
-        self.base = Path(f"{str(self.config.proj_path)}/data")
-        self.base.mkdir()
+        self.base = Path(f"{str(self.config['PROJ_PATH'])}/data")
         self.stage = Path(f"{str(self.base)}/stage")
-        self.stage.mkdir()
         self.repo = Path(f"{str(self.base)}/repo")
-        self.repo.mkdir()
-
-        # 4.
-        chdir(str(self.repo))
-        out = self._run_command(self, ["init", self.config.fossil_repo_name])
-
-        # 5.
-        out = self._run_command(
-            self,
-            [
+        out = self._run_command([
                 "open",
-                f"{str(self.repo)}/{self.config.fossil_repo_name}",
+                f"{str(self.repo)}/{self.config['FOSSIL_REPO_NAME']}",
                 "--workdir",
-                str(self.stage),
-            ],
-        )
-
-        # 6.
+                str(self.stage)])
         if categories:
-            self._DAO = DAO(categories, f"{self.base}/{self.config.sqlite_file}")
+            self._DAO = DAO(categories, f"{self.base}/{self.config['SQLITE_FILE']}")
 
     def create_object(self, the_object):
         """Write an object to pyphlogiston.
@@ -111,11 +78,11 @@ class RAO:
 
     def _run_command(self, args):
         """Wrap commands to run against the fossil repo."""
-        out = run([self.config.fossil] + args, capture_output=True)
+        out = run([self.config['FOSSIL'], *args], capture_output=True)
         try:
             assert out.returncode == 0
         except AssertionError as e:
-            print(f"_run_command error for {self.config.fossil} {args}\n\tError => {e}")
+            print(f"_run_command error for {self.config['FOSSIL']} {args}\n\tError => {e}")
         return out
 
     def add_files(self, args):
