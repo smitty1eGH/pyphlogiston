@@ -4,6 +4,10 @@ import pytest
 
 from etc.install_profile import PROJ_NAME, PROJ_ROOT, get_config
 
+from lib.pyphlogiston import RAO
+from w5lib import WType
+
+
 @pytest.fixture
 def status():
     '''Return the command to get fossil status
@@ -64,3 +68,7 @@ def setup_fossil(tmp_path, fossil):
     assert out.returncode == 0
 
     return str(stage)
+
+@pytest.fixture(scope='module')
+def rao(config, WType):
+    return RAO(config,WType)

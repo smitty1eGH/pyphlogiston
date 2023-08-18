@@ -23,16 +23,6 @@ from .dao import DAO
 #  3. Invoke the DAO functions that are boosted by the RAO
 
 
-@dataclass
-class RAOConfig:
-    """RAO configuration items to set."""
-
-    fossil: str  # path to fossil binary
-    proj_path: str  # top of the storage tree
-    fossil_repo_name: str  # fossil repository name
-    sqlite_file: str  # name of sqlite file bb
-
-
 class RAO:
     """The Repository Access Object.
 
@@ -82,7 +72,7 @@ class RAO:
         try:
             assert out.returncode == 0
         except AssertionError as e:
-            print(f"_run_command error for {self.config['FOSSIL']} {args}\n\tError => {e}")
+            print(f"_run_command error for {self.config['FOSSIL']} {args}\n\tError => {out.stdout}")
         return out
 
     def add_files(self, args):
@@ -93,7 +83,7 @@ class RAO:
         return self._run_command(self.config.fossil, args)
 
     def commit_files(self, tag, message):
-        """Run the fossile commit command."""
+        """Run the fossil commit command."""
         args = [
             "commit",
             "--no-prompt",
@@ -113,7 +103,7 @@ class RAO:
         """
         old = getcwd()
         chdir(self.config.proj_path)
-        out0 = self.add_files(self.config.proj_path, self.config.fossil, [])
+        out0 = self.add_files()
         assert out0 == 0
         out1 = self.commit_files(
             self.config.proj_path, self.config.fossil, tag, message
@@ -121,3 +111,8 @@ class RAO:
         assert out1 == 0
         chdir(old)
         return out0, out1
+
+    def summary(self):
+        '''Return the summary from the DAO
+        '''
+        return self._DAO.summary()

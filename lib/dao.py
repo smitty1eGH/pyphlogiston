@@ -6,6 +6,8 @@ from uuid import uuid4 as uu
 
 DEFAULT = "__default__"
 
+# Data Access Object wraps the sqlite file that is the present tense
+#   state of the application.
 
 @dataclass_json
 @dataclass
@@ -108,8 +110,7 @@ class DAO:
         SQL2 = " UNION ".join(SQL0)
         cur = self._conn.cursor()
         res = cur.execute(SQL2)
-        for r in res:
-            print(r)
+        return [str(r) for r in res]
 
     def select(self, category, name, dry_run=False):
         """Return data from query."""
@@ -135,9 +136,7 @@ class DAO:
             return self._conn.execute(sql1, (data.uuid, data.to_json()))
 
     def ins_how(self, parent, child, data=None, dry_run=False):
-        use_data = data
-        if data == None:
-            use_data = ""
+        use_data = data or ""
         argtuple = (parent.uuid, parent.apitype, child.uuid, child.apitype, use_data)
         if dry_run:
             INS_HOW = "%s,%s,%s,%s,%s"
