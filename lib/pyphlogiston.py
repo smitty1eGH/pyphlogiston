@@ -42,12 +42,11 @@ class RAO:
         """Configure the structure.
         """
         self.config = config
-        self.base = Path(f"{str(self.config['PROJ_PATH'])}/data")
-        self.stage = Path(f"{str(self.base)}/stage")
-        self.repo = Path(f"{str(self.base)}/repo")
+        self.base = Path(f"{self.config['PROJ_PATH']}data")
+        self.stage = Path(f"{str(self.base)}/stage/")
         out = self._run_command([
-                "open",
-                f"{str(self.repo)}/{self.config['FOSSIL_REPO_NAME']}",
+                 "open",
+                f"{str(self.base)}/{self.config['FOSSIL_REPO_NAME']}",
                 "--workdir",
                 str(self.stage)])
         if categories:
@@ -116,3 +115,44 @@ class RAO:
         '''Return the summary from the DAO
         '''
         return self._DAO.summary()
+
+
+def data_import(rao,insertable_data,maybe_dry_run=False):
+    '''1. Partition the keys in the content
+       2. Do regular table inserts
+       3. Do the 'how' inserts
+    '''
+    def partition(iterable):
+        JOIN_TABLE_FLAG='2'
+        NOT_JOIN_TABLE=-1
+        regular=lambda x:x.find(JOIN_TABLE_FLAG)==NOT_JOIN_TABLE
+        t1, t2 = tee(iterable)
+        return filterfalse(regular, t1), filter(regular, t2)
+
+    # 1.
+    d=insertable_data['content']
+    join_tables, regular_tables=partition(d.keys())
+
+    # 2.
+    for i in regular_tables:
+        for e in d[i]:
+            f=DefVal(uuid   =e.get('uuid',uuid())
+                    ,apitype=wtypes[i]
+                    ,name   =e.get('name',DEFAULT)
+                    ,data   =str(e) )
+            uuid_cache[f.name]=f
+            if do_insert:
+                sql=rao._DAO.insert(f, dry_run=False)
+                with open(f'{str(self.stage)}{f.uuid}','w') as stage:
+                    stage.write(f.to_json())
+
+    # 3.
+    for i in join_tables:
+        for e in d[i]:
+            if do_insert:
+                sql=rao._DAO.ins_how( uuid_cache[e[0]]
+                                    , uuid_cache[e[1]]
+                                    , data=''
+                                    , dry_run=False   )
+                with open(f'{str(self.stage)}{f.uuid}','w') as stage:
+                    stage.write(f.to_json())

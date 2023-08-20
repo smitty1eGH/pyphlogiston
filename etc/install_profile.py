@@ -14,7 +14,7 @@ PROJ_ROOT = "/home/smitty/proj"
 def setup_fossil(tmp_path, fossil, proj_name):
     """
     1. set up  data
-    2.         data/checkout
+    2.         data/stage
     3.         data/repo
     4.         data/repo/repo.fossil
     """

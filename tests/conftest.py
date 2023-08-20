@@ -1,11 +1,13 @@
+from pathlib import Path
 from subprocess import run
 
 import pytest
 
 from etc.install_profile import PROJ_NAME, PROJ_ROOT, get_config
 
+from data.scrap0 import scrap0
 from lib.pyphlogiston import RAO
-from w5lib import WType
+from lib.w5lib import WType
 
 
 @pytest.fixture
@@ -35,7 +37,6 @@ def config(proj_name,repo_name,tmp_path):
 def data_path():
     return "/home/smitty/proj/pyphlogiston/pyphlogiston/data/"
 
-@pytest.fixture
 def setup_fossil(tmp_path, fossil):
     """
     1. set up  data
@@ -69,6 +70,10 @@ def setup_fossil(tmp_path, fossil):
 
     return str(stage)
 
-@pytest.fixture(scope='module')
-def rao(config, WType):
+@pytest.fixture
+def rao(config):
     return RAO(config,WType)
+
+@pytest.fixture
+def test_data():
+    return scrap0

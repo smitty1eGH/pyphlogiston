@@ -19,7 +19,7 @@ class DefVal:
     uuid: str = ""
     apitype: str = ""
     name: str = DEFAULT
-
+    data: str = DEFAULT
 
 class DAO:
     """Data Access Object for SQLite database that is:
@@ -139,7 +139,7 @@ class DAO:
         use_data = data or ""
         argtuple = (parent.uuid, parent.apitype, child.uuid, child.apitype, use_data)
         if dry_run:
-            INS_HOW = "%s,%s,%s,%s,%s"
+            INS_HOW = "'%s',%s,'%s',%s,'%s'"
             sql = f"INSERT INTO how(puuid,ptype,cuuid,ctype,data) VALUES ({INS_HOW});"
             return sql % argtuple
         else:
