@@ -46,15 +46,12 @@ class RAO:
         """Configure the structure.
         """
         self.config = config
-        self.base = Path(f"{self.config['PROJ_PATH']}data")
-        self.stage = Path(f"{str(self.base)}/stage/")
-        out = self._run_command([
-                 "open",
-                f"{str(self.base)}/{self.config['FOSSIL_REPO_NAME']}",
-                "--workdir",
-                str(self.stage)])
+        self.base = Path(f"{self.config['PROJ_PATH']}")
+        self.repo = Path(f"{self.config['PROJ_PATH']}{self.config['PROJ_REPO']}")
+        self.stage = Path(f"{self.config['PROJ_PATH']}{self.config['PROJ_STAGE']}")
+        out = self._run_command(["open", str(self.repo), "--workdir", str(self.stage)])
         if categories:
-            self._DAO = DAO(categories, f"{self.base}/{self.config['SQLITE_FILE']}")
+            self._DAO = DAO(categories, f"{self.config['PROJ_PATH']}{self.config['SQLITE_FILE']}")
 
     def create_object(self, the_object):
         """Write an object to pyphlogiston.
