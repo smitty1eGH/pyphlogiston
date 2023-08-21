@@ -60,7 +60,7 @@ class DAO:
 
         self.categories = categories
         self.cache = {}
-        self.tables = [x for x in categories.__members__]
+        self.tables = [x.name for x in categories]
         self.db_path = db_path
         self._conn = sqlite3.connect(self.db_path)
 

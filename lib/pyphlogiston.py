@@ -1,10 +1,14 @@
 from dataclasses import dataclass
+from itertools   import tee, filterfalse
 import json
-from os import chdir, getcwd
-from pathlib import Path
-from subprocess import run
+from os          import chdir, getcwd
+from pathlib     import Path
+import sqlite3
+from subprocess  import run
+from uuid        import uuid4 as uuid
 
-from .dao import DAO
+from lib.dao import DAO, DefVal
+from lib.w5lib import DEFAULT, WType, wtypes
 
 # The idea is that the Repository Access Object
 #   wraps a SQLite file and associated Fossil
@@ -121,6 +125,8 @@ def data_import(rao,insertable_data,maybe_dry_run=False):
     '''1. Partition the keys in the content
        2. Do regular table inserts
        3. Do the 'how' inserts
+       4. Use the uuid_cache to write out the resulting stage
+            document for each object.
     '''
     def partition(iterable):
         JOIN_TABLE_FLAG='2'
@@ -130,6 +136,7 @@ def data_import(rao,insertable_data,maybe_dry_run=False):
         return filterfalse(regular, t1), filter(regular, t2)
 
     # 1.
+    uuid_cache={}
     d=insertable_data['content']
     join_tables, regular_tables=partition(d.keys())
 
@@ -141,18 +148,20 @@ def data_import(rao,insertable_data,maybe_dry_run=False):
                     ,name   =e.get('name',DEFAULT)
                     ,data   =str(e) )
             uuid_cache[f.name]=f
-            if do_insert:
-                sql=rao._DAO.insert(f, dry_run=False)
-                with open(f'{str(self.stage)}{f.uuid}','w') as stage:
-                    stage.write(f.to_json())
+            sql=rao._DAO.insert(f, dry_run=True)
 
     # 3.
     for i in join_tables:
         for e in d[i]:
-            if do_insert:
-                sql=rao._DAO.ins_how( uuid_cache[e[0]]
-                                    , uuid_cache[e[1]]
-                                    , data=''
-                                    , dry_run=False   )
-                with open(f'{str(self.stage)}{f.uuid}','w') as stage:
-                    stage.write(f.to_json())
+            sql=rao._DAO.ins_how( uuid_cache[e[0]]
+                                , uuid_cache[e[1]]
+                                , data=''
+                                , dry_run=True   )
+
+    # 4.
+    c2 = sqlite3.connect('./asdf.sqlite')
+    conn = rao._DAO.conn
+    conn.backup(c2)
+    #for dv in uuid_cache.Values():
+    #    with open(f'{str(self.stage)}{f.uuid}','w') as stage:
+    #        stage.write(f.to_json())
