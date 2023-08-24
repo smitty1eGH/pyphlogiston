@@ -119,11 +119,17 @@ class RAO:
 
 
 def data_import(rao,insertable_data,maybe_dry_run=False):
-    '''1. Partition the keys in the content
+    '''This is for pulling in a whole JSON document.
+
+       1. Partition the keys in the content
        2. Do regular table inserts
        3. Do the 'how' inserts
        4. Use the uuid_cache to write out the resulting stage
             document for each object.
+       5. Commit
+    #for testing
+    #conn = rao._DAO.conn
+    #conn.execute('VACUUM INTO "./asdf.sqlite"')
     '''
     def partition(iterable):
         JOIN_TABLE_FLAG='2'
@@ -145,7 +151,7 @@ def data_import(rao,insertable_data,maybe_dry_run=False):
                     ,name   =e.get('name',DEFAULT)
                     ,data   =str(e) )
             uuid_cache[f.name]=f
-            sql=rao._DAO.insert(f, dry_run=True)
+            sql=rao._DAO.insert(f, dry_run=maybe_dry_run)
 
     # 3.
     for i in join_tables:
@@ -153,12 +159,12 @@ def data_import(rao,insertable_data,maybe_dry_run=False):
             sql=rao._DAO.ins_how( uuid_cache[e[0]]
                                 , uuid_cache[e[1]]
                                 , data=''
-                                , dry_run=True   )
+                                , dry_run=maybe_dry_run)
 
     # 4.
-    c2 = sqlite3.connect('./asdf.sqlite')
-    conn = rao._DAO.conn
-    conn.backup(c2)
-    #for dv in uuid_cache.Values():
-    #    with open(f'{str(self.stage)}{f.uuid}','w') as stage:
-    #        stage.write(f.to_json())
+    for dv in uuid_cache.Values():
+        with open(f'{str(self.stage)}{dv.uuid}','w') as st:
+            st.write(rao._DAO.add_object_to_fossil(dv.uuid))
+
+    # 5.
+    rao.add_and_commit('tag','message')

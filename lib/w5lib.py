@@ -4,8 +4,7 @@ DEFAULT='__default__'
 LRU_SUFF='_lru'
 
 # These are related, but we'll violate DRY momentarily
-wtypes={'what':0,'who':1,'where_':2,'when_':3,'why':4}
-
+wtypes={'what':0,'who':1,'where_':2,'when_':3,'why':4,0:'what',1:'who',2:'where_',3:'when_',4:'why'}
 class WType(IntEnum):
     """Storage schema types."""
 
